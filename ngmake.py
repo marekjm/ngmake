@@ -60,9 +60,6 @@ def genericLexer(source):
     return tokens
 
 
-print(string.ascii_letters)
-print(string.punctuation)
-
 source_text = ''
 with open('./example.js') as ifstream:
     source_text = ifstream.read()
