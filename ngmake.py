@@ -125,7 +125,7 @@ def extractTuple(tokens):
     return (extracted_tuple, i)
 
 def processRule(tokens):
-    name, rule, inc = '', {}, 0
+    name, inc = '', 0
 
     i = 0
     while i < len(tokens):
@@ -146,8 +146,9 @@ def processRule(tokens):
 
     steps = splitList(',', tokens[i:inc])
 
-    print(name, dependencies, arguments, steps)
-    return (name, rule, inc)
+    arguments = {arguments[0]: name, arguments[1]: dependencies}
+
+    return (name, {'arguments': arguments, 'steps': steps, 'dependencies': dependencies}, inc)
 
 def processAssignment(tokens):
     name, value, inc = '', None, 0
@@ -158,9 +159,7 @@ def processAssignment(tokens):
     i += 1 # skip '='
     value = tokens[i]
 
-    print(name, value)
     return (name, value, inc)
-
 
 def processTokens(tokens):
     variables, rules = {}, {}
@@ -178,6 +177,29 @@ def processTokens(tokens):
     return (variables, rules)
 
 
+def prepareStep(step, variables, arguments):
+    parts = []
+    for chunk in step:
+        if chunk[0] in ["'", '"']:
+            parts.append(chunk[1:-1])
+        else:
+            parts.append('$({0})'.format(chunk.upper()))
+    return ' '.join(parts)
+
+def prepareOutput(variables, rules):
+    output_text = ''
+    for k in sorted(variables.keys()):
+        output_text += '{0}={1}\n'.format(k.upper(), variables[k][1:-1])
+    if output_text:
+        output_text += '\n\n'
+    for name in sorted(rules.keys()):
+        output_text += '{0}: {1}\n'.format(name, ' '.join(map(lambda s: s[1:-1], rules[name]['dependencies'])))
+        for step in rules[name]['steps']:
+            output_text += '\t{0}\n'.format(prepareStep(step, variables, rules[name]['arguments']))
+        output_text += '\n'
+    return output_text.rstrip('\n')
+
+
 source_text = ''
 with open('./example.js') as ifstream:
     source_text = ifstream.read()
@@ -188,3 +210,7 @@ tokens = reduceArrowOperator(raw_tokens)
 
 
 variables, rules = processTokens(tokens)
+
+
+output_text = prepareOutput(variables, rules)
+print(output_text)
