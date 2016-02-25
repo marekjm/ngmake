@@ -60,8 +60,24 @@ def genericLexer(source):
     return tokens
 
 
+def reduceArrowOperator(tokens):
+    reduced_tokens = []
+    return reduced_tokens
+
+
+def processTokens(tokens):
+    variables, rules = {}, {}
+    return (variables, rules)
+
+
 source_text = ''
 with open('./example.js') as ifstream:
     source_text = ifstream.read()
 
-print(genericLexer(source_text))
+
+raw_tokens = genericLexer(source_text)
+print(raw_tokens)
+tokens = reduceArrowOperator(raw_tokens)
+
+
+variables, rules = processTokens(tokens)
