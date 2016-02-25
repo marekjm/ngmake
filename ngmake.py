@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 
+import re
 import string
+
+
+name_regex = re.compile('^[a-zA-Z_][a-zA-Z0-9_]*$')
 
 
 def extract(source):
@@ -145,6 +149,19 @@ def processRule(tokens):
     print(name, dependencies, arguments, steps)
     return (name, rule, inc)
 
+def processAssignment(tokens):
+    name, value, inc = '', None, 0
+
+    i = 0
+    name = tokens[i]
+    i += 1
+    i += 1 # skip '='
+    value = tokens[i]
+
+    print(name, value)
+    return (name, value, inc)
+
+
 def processTokens(tokens):
     variables, rules = {}, {}
     i = 0
@@ -152,6 +169,10 @@ def processTokens(tokens):
         if tokens[i] == '(' and tokens[i+1][0] in ['"', "'"]:
             name, rule, inc = processRule(tokens[i:])
             rules[name] = rule
+            i += inc
+        elif name_regex.match(tokens[i]) and tokens[i+1] == '=':
+            name, value, inc = processAssignment(tokens[i:])
+            variables[name] = value
             i += inc
         i += 1
     return (variables, rules)
@@ -164,7 +185,6 @@ with open('./example.js') as ifstream:
 
 raw_tokens = genericLexer(source_text)
 tokens = reduceArrowOperator(raw_tokens)
-print(tokens)
 
 
 variables, rules = processTokens(tokens)
