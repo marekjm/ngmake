@@ -229,7 +229,10 @@ def prepareOutput(variables, rules):
         output_text += '\n\n'
     for name in sorted(rules.keys()):
         output_text += '{0}: {1}\n'.format(name, ' '.join(map(lambda s: s[1:-1], rules[name]['dependencies'])))
+        final_steps = []
         for step in rules[name]['steps']:
+            final_steps.append(step)
+        for step in final_steps:
             output_text += '\t{0}\n'.format(prepareStep(step, variables, rules[name]['arguments']))
         output_text += '\n'
     return output_text.rstrip('\n')
