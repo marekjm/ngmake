@@ -73,6 +73,19 @@ def reduceArrowOperator(tokens):
     return reduced_tokens
 
 
+def splitList(delimiter, ls):
+    sublists = []
+    current = []
+    for element in ls:
+        if element == delimiter:
+            sublists.append(current)
+            current = []
+            continue
+        current.append(element)
+    sublists.append(current)
+    return sublists
+
+
 def extractList(tokens):
     extracted_list = []
     balance = 1
@@ -127,7 +140,9 @@ def processRule(tokens):
     arguments, adv = extractTuple(tokens[i:])
     i += adv
 
-    print(name, dependencies, arguments, tokens[i:inc])
+    steps = splitList(',', tokens[i:inc])
+
+    print(name, dependencies, arguments, steps)
     return (name, rule, inc)
 
 def processTokens(tokens):
