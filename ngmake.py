@@ -174,7 +174,7 @@ def processRule(tokens):
     for n, name in enumerate(arguments):
         args[name] = target_spec[n]
 
-    return (args['name'][1:-1], {'arguments': args, 'steps': steps, 'dependencies': args['dependencies']}, inc)
+    return (args[arguments[0]][1:-1], {'arguments': args, 'steps': steps, 'dependencies': args[arguments[1]]}, inc)
 
 def processAssignment(tokens):
     name, value, inc = '', None, 0
