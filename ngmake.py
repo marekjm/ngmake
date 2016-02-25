@@ -62,11 +62,22 @@ def genericLexer(source):
 
 def reduceArrowOperator(tokens):
     reduced_tokens = []
+    i = 0
+    while i < len(tokens):
+        if tokens[i] == '-' and tokens[i+1] == '>':
+            reduced_tokens.append('->')
+            i += 1
+        else:
+            reduced_tokens.append(tokens[i])
+        i += 1
     return reduced_tokens
 
 
 def processTokens(tokens):
     variables, rules = {}, {}
+    i = 0
+    while i < len(tokens):
+        i += 1
     return (variables, rules)
 
 
@@ -76,8 +87,8 @@ with open('./example.js') as ifstream:
 
 
 raw_tokens = genericLexer(source_text)
-print(raw_tokens)
 tokens = reduceArrowOperator(raw_tokens)
+print(tokens)
 
 
 variables, rules = processTokens(tokens)
