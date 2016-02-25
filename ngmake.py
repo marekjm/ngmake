@@ -73,10 +73,71 @@ def reduceArrowOperator(tokens):
     return reduced_tokens
 
 
+def extractList(tokens):
+    extracted_list = []
+    balance = 1
+    i = 1
+    while i < len(tokens) and balance:
+        if tokens[i] == '[':
+            balance += 1
+        elif tokens[i] == ']':
+            balance -= 1
+        elif tokens[i] == ',':
+            # skip commas
+            pass
+        else:
+            extracted_list.append(tokens[i])
+        i += 1
+    return (extracted_list, i)
+
+def extractTuple(tokens):
+    extracted_tuple = []
+    balance = 1
+    i = 1
+    while i < len(tokens) and balance:
+        if tokens[i] == '(':
+            balance += 1
+        elif tokens[i] == ')':
+            balance -= 1
+        elif tokens[i] == ',':
+            # skip commas
+            pass
+        else:
+            extracted_tuple.append(tokens[i])
+        i += 1
+    return (extracted_tuple, i)
+
+def processRule(tokens):
+    name, rule, inc = '', {}, 0
+
+    i = 0
+    while i < len(tokens):
+        if tokens[i] == '.':
+            break
+        i += 1
+    inc = i
+
+    i = 1
+    name = tokens[1][1:-1]
+    i += 2
+    dependencies, adv = extractList(tokens[i:])
+    i += adv
+    i += 1 # skip closing ')'
+    i += 1 # skip arrow operator
+    arguments, adv = extractTuple(tokens[i:])
+    i += adv
+
+    print(name, dependencies, arguments, tokens[i:inc])
+    return (name, rule, inc)
+
 def processTokens(tokens):
     variables, rules = {}, {}
     i = 0
     while i < len(tokens):
+        if tokens[i] == '(' and tokens[i+1][0] in ['"', "'"]:
+            name, rule, inc = processRule(tokens[i:])
+            rules[name] = rule
+            i += inc
         i += 1
     return (variables, rules)
 
