@@ -3,9 +3,6 @@
 import string
 
 
-def isLetter(c):
-    return (c == '_' or c in string.ascii_letters)
-
 def extract(source):
     quote = source[0]
     i = 1
