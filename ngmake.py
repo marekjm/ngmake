@@ -119,6 +119,10 @@ def extractTuple(tokens):
         elif tokens[i] == ',':
             # skip commas
             pass
+        elif tokens[i] == '[':
+            pt, inc = extractList(tokens[i:])
+            extracted_tuple.append(pt)
+            i += inc-1
         else:
             extracted_tuple.append(tokens[i])
         i += 1
@@ -134,21 +138,20 @@ def processRule(tokens):
         i += 1
     inc = i
 
-    i = 1
-    name = tokens[1][1:-1]
-    i += 2
-    dependencies, adv = extractList(tokens[i:])
+    i = 0
+    target_spec, adv = extractTuple(tokens[i:])
     i += adv
-    i += 1 # skip closing ')'
     i += 1 # skip arrow operator
     arguments, adv = extractTuple(tokens[i:])
     i += adv
 
     steps = splitList(',', tokens[i:inc])
 
-    arguments = {arguments[0]: name, arguments[1]: dependencies}
+    args = {}
+    for n, name in enumerate(arguments):
+        args[name] = target_spec[n]
 
-    return (name, {'arguments': arguments, 'steps': steps, 'dependencies': dependencies}, inc)
+    return (args['name'][1:-1], {'arguments': args, 'steps': steps, 'dependencies': args['dependencies']}, inc)
 
 def processAssignment(tokens):
     name, value, inc = '', None, 0
@@ -187,6 +190,8 @@ def prepareStep(step, variables, arguments):
                 pt = arguments[chunk]
                 if type(pt) is list:
                     pt = ' '.join(map(lambda s: (s[1:-1] if s[0] in ['"', "'"] else s), pt))
+                if pt[0] in ['"', "'"]:
+                    pt = pt[1:-1]
                 parts.append(pt)
             else:
                 parts.append('$({0})'.format(chunk.upper()))
