@@ -27,7 +27,7 @@ def genericLexer(source):
     line_no, byte_no, char_no = 0, 0, 0
     tokens = []
     token, c = '', ''
-    punctuation = string.punctuation.replace('"', '').replace("'", '')
+    punctuation = string.punctuation.replace('"', '').replace("'", '').replace('_', '')
 
     i = 0
     while i < len(source):
