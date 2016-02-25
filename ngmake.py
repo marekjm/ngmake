@@ -2,6 +2,7 @@
 
 import re
 import string
+import sys
 
 
 name_regex = re.compile('^[a-zA-Z_][a-zA-Z0-9_]*$')
@@ -280,7 +281,7 @@ def prepareOutput(variables, functions, rules):
 
 
 source_text = ''
-with open('./example.js') as ifstream:
+with open(sys.argv[1]) as ifstream:
     source_text = ifstream.read()
 
 
