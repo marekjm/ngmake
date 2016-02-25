@@ -164,20 +164,44 @@ def processAssignment(tokens):
 
     return (name, value, inc)
 
+def processFunction(tokens):
+    name, arguments, inc = '', [], 0
+
+    i = 0
+    while i < len(tokens):
+        if tokens[i] == '.':
+            break
+        i += 1
+    inc = i
+
+    i = 1 # skip 'function' keyword
+    name = tokens[i]
+    i += 1 # skip name
+    arguments, adv = extractTuple(tokens[i:])
+    i += adv
+
+    steps = splitList(',', tokens[i:inc])
+
+    return (name, arguments, steps, inc)
+
 def processTokens(tokens):
-    variables, rules = {}, {}
+    variables, functions, rules = {}, {}, {}
     i = 0
     while i < len(tokens):
         if tokens[i] == '(' and tokens[i+1][0] in ['"', "'"]:
             name, rule, inc = processRule(tokens[i:])
             rules[name] = rule
             i += inc
+        elif tokens[i] == 'function':
+            name, arguments, steps, inc = processFunction(tokens[i:])
+            functions[name] = {'arguments': arguments, 'steps': steps,}
+            i += inc
         elif name_regex.match(tokens[i]) and tokens[i+1] == '=':
             name, value, inc = processAssignment(tokens[i:])
             variables[name] = value
             i += inc
         i += 1
-    return (variables, rules)
+    return (variables, functions, rules)
 
 
 def prepareStep(step, variables, arguments):
@@ -220,7 +244,7 @@ raw_tokens = genericLexer(source_text)
 tokens = reduceArrowOperator(raw_tokens)
 
 
-variables, rules = processTokens(tokens)
+variables, functions, rules = processTokens(tokens)
 
 
 output_text = prepareOutput(variables, rules)

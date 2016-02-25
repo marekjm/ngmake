@@ -4,8 +4,14 @@ coptimizationflags = ''.
 dynamic_syms = '-Wl,--dynamic-list-cpp-typeinfo'.
 cxx = 'g++'.
 
+
+function compile(name, dependencies)
+    cxx '-o' name dependencies
+.
+
+
 ('build/bin/vm/cpu', ['src/front/cpu.cpp', 'build/cpu.o'], 'clang++') -> (name, dependencies, cxx)
-    cxx '-o' name dependencies,
+    cxx '-o' name dependencies
 .
 
 ('build/bin/vm/asm', ['src/front/asm.cpp',]) -> (name, dependencies)
