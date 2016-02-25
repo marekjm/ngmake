@@ -247,6 +247,16 @@ def prepareExtendedSteps(step, variables, functions):
     extended_steps = []
     name = step[0]
     arguments, adv = extractTuple(step[1:])
+    args = {}
+    for n, arg_name in enumerate(functions[name]['arguments']):
+        args[arg_name] = arguments[n]
+    for s in functions[name]['steps']:
+        current = []
+        for ss in s:
+            if ss in args:
+                ss = args[ss]
+            current.append(ss)
+        extended_steps.append(current)
     return extended_steps
 
 def prepareOutput(variables, functions, rules):
