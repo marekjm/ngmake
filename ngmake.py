@@ -196,7 +196,7 @@ def processFunction(tokens):
         i += 1
     inc = i
 
-    i = 1 # skip 'function' keyword
+    i = 0
     name = tokens[i]
     i += 1 # skip name
     arguments, adv = extractTuple(tokens[i:])
@@ -214,7 +214,7 @@ def processTokens(tokens):
             name, rule, inc = processRule(tokens[i:])
             rules[name] = rule
             i += inc
-        elif tokens[i] == 'function':
+        elif name_regex.match(tokens[i]) and tokens[i+1] == '(':
             name, arguments, steps, inc = processFunction(tokens[i:])
             functions[name] = {'arguments': arguments, 'steps': steps,}
             i += inc

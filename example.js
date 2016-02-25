@@ -5,7 +5,7 @@ dynamic_syms = '-Wl,--dynamic-list-cpp-typeinfo'.
 cxx = 'g++'.
 
 
-function compile(output, compilation_members)
+compile(output, compilation_members)
     cxx '-o' output compilation_members
 .
 
