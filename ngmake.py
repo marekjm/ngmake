@@ -183,7 +183,13 @@ def prepareStep(step, variables, arguments):
         if chunk[0] in ["'", '"']:
             parts.append(chunk[1:-1])
         else:
-            parts.append('$({0})'.format(chunk.upper()))
+            if chunk in arguments:
+                pt = arguments[chunk]
+                if type(pt) is list:
+                    pt = ' '.join(map(lambda s: (s[1:-1] if s[0] in ['"', "'"] else s), pt))
+                parts.append(pt)
+            else:
+                parts.append('$({0})'.format(chunk.upper()))
     return ' '.join(parts)
 
 def prepareOutput(variables, rules):
