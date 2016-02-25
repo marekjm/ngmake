@@ -89,6 +89,26 @@ def splitList(delimiter, ls):
     sublists.append(current)
     return sublists
 
+def splitSteps(steps):
+    substeps = []
+    current = []
+    i = 0
+    while i < len(steps):
+        element = steps[i]
+        if element == ',':
+            substeps.append(current)
+            current = []
+        elif element == '(':
+            i += 1
+            while steps[i] != ')':
+                current.append(steps[i])
+                i += 1
+        else:
+            current.append(element)
+        i += 1
+    substeps.append(current)
+    return substeps
+
 
 def extractList(tokens):
     extracted_list = []
@@ -145,7 +165,7 @@ def processRule(tokens):
     arguments, adv = extractTuple(tokens[i:])
     i += adv
 
-    steps = splitList(',', tokens[i:inc])
+    steps = splitSteps(tokens[i:inc])
 
     args = {}
     for n, name in enumerate(arguments):
@@ -221,7 +241,13 @@ def prepareStep(step, variables, arguments):
                 parts.append('$({0})'.format(chunk.upper()))
     return ' '.join(parts)
 
-def prepareOutput(variables, rules):
+def prepareExtendedSteps(step, variables, functions):
+    extended_steps = []
+    name = step[0]
+    arguments, adv = extractTuple(step[1:])
+    return extended_steps
+
+def prepareOutput(variables, functions, rules):
     output_text = ''
     for k in sorted(variables.keys()):
         output_text += '{0}={1}\n'.format(k.upper(), variables[k][1:-1])
@@ -231,7 +257,10 @@ def prepareOutput(variables, rules):
         output_text += '{0}: {1}\n'.format(name, ' '.join(map(lambda s: s[1:-1], rules[name]['dependencies'])))
         final_steps = []
         for step in rules[name]['steps']:
-            final_steps.append(step)
+            if step[0] in functions and step[1] == '(':
+                final_steps.extend(prepareExtendedSteps(step, variables, functions))
+            else:
+                final_steps.append(step)
         for step in final_steps:
             output_text += '\t{0}\n'.format(prepareStep(step, variables, rules[name]['arguments']))
         output_text += '\n'
@@ -250,5 +279,5 @@ tokens = reduceArrowOperator(raw_tokens)
 variables, functions, rules = processTokens(tokens)
 
 
-output_text = prepareOutput(variables, rules)
+output_text = prepareOutput(variables, functions, rules)
 print(output_text)
