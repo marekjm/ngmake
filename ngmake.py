@@ -99,10 +99,12 @@ def splitSteps(steps):
             substeps.append(current)
             current = []
         elif element == '(':
+            current.append('(')
             i += 1
             while steps[i] != ')':
                 current.append(steps[i])
                 i += 1
+            current.append(')')
         else:
             current.append(element)
         i += 1
