@@ -11,7 +11,6 @@ function compile(output, compilation_members)
 
 
 ('build/bin/vm/cpu', ['src/front/cpu.cpp', 'build/cpu.o'], 'clang++') -> (name, dependencies, cxx)
-    cxx '-o' name dependencies,
     compile(name, dependencies)
 .
 
