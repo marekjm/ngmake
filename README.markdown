@@ -70,6 +70,8 @@ The example above has two parameters:
 1. target's dependencies (`['first/dependency', 'second/dependency']`) bound to `dependencies` variable,
 
 Bound variables are visible only inside target's body.
+Steps are separate by commas.
+Target body is terminated by a full stop.
 
 
 *More advanced example*
@@ -98,6 +100,9 @@ was shadowed.
 Functions act more like macros.
 They are expanded in the place they are called.
 Functions can only be called from targets to prevent infinite recursion as Ngmake has no control structures.
+
+Steps are separate by commas.
+Function body is terminated by a full stop.
 
 ```
 compile(target, dependencies)
