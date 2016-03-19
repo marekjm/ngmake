@@ -1,5 +1,77 @@
 #!/usr/bin/env python3
 
+"""NAME
+    ngmake  -- new generation make
+
+
+USAGE
+
+    # to compile Ngmake source
+    ngmake Ngmakefile > Makefile
+
+    # to display this help message
+    ngmake
+
+
+DESCRIPTION
+
+    Ngmake is a compiler to GNU Makefiles from a more sane language (a.k.a. "Yet another Makefile language").
+    Supported features include function (target), macro, and variable declarations.
+    Macros are small pieces of translation logic inlined inside functions.
+    For example, a function may be used to compile a final target but a macro is used to encapsulate the
+    generic logic actually used to perform required actions.
+
+
+NGMAKEFILE SYNTAX
+
+    Functions
+
+            ('build/target', ['src/dependency0.c', 'src/dependency1.c']) -> (target, dependencies)
+                'rm' '-f' target,
+                'g++' '-o' target dependencies
+            .
+
+        Functions are used to encode steps required to make a target.
+        They can contain arbitrary number of steps, separated by commas.
+        A function definition ends with a period character.
+
+    Macros
+
+            remove(target) 'rm' '-f' target .
+            compile(target, dependencies) 'g++' '-o' target dependencies .
+
+            ('build/target', ['src/dependency0.c', 'src/dependency1.c']) -> (target, dependencies)
+                remove(target),
+                compile(target, dependencies)
+            .
+
+        Macros are smaller containers for making steps.
+        They can be called inside functions.
+        A call to a macro inlines it.
+
+    Variables
+
+            compiler = 'g++'.
+
+            remove(target) 'rm' '-f' target .
+            compile(target, dependencies) compiler '-o' target dependencies .
+
+            ('build/target', ['src/dependency0.c', 'src/dependency1.c']) -> (target, dependencies)
+                remove(target),
+                compile(target, dependencies)
+            .
+
+        Variables are used to hold values used during making process.
+        Variables can be shadowed by parameters of the same name passed to macro or a function:
+
+            ('build/target', ['src/dependency0.c', 'src/dependency1.c'], 'clang++') -> (target, dependencies, compiler)
+                remove(target),
+                compile(target, dependencies)
+            .
+
+        Once shadowed, old value of a variable cannot be obtained.
+"""
+
 import re
 import string
 import sys
@@ -280,17 +352,20 @@ def prepareOutput(variables, functions, rules):
     return output_text.rstrip('\n')
 
 
-source_text = ''
-with open(sys.argv[1]) as ifstream:
-    source_text = ifstream.read()
+if __name__ == '__main__':
+    if len(sys.argv) < 2:
+        print(__doc__)
+        exit(1)
+
+    source_text = ''
+    with open(sys.argv[1]) as ifstream:
+        source_text = ifstream.read()
 
 
-raw_tokens = genericLexer(source_text)
-tokens = reduceArrowOperator(raw_tokens)
+    raw_tokens = genericLexer(source_text)
+    tokens = reduceArrowOperator(raw_tokens)
 
+    variables, functions, rules = processTokens(tokens)
 
-variables, functions, rules = processTokens(tokens)
-
-
-output_text = prepareOutput(variables, functions, rules)
-print(output_text)
+    output_text = prepareOutput(variables, functions, rules)
+    print(output_text)
