@@ -96,7 +96,7 @@ def extract(source):
         i += 1
     return source[:i+1]
 
-def genericLexer(source):
+def generic_lexer(source):
     line_no, byte_no, char_no = 0, 0, 0
     tokens = []
     token, c = '', ''
@@ -137,7 +137,7 @@ def genericLexer(source):
     return tokens
 
 
-def reduceArrowOperator(tokens):
+def reduce_arrow_operator(tokens):
     reduced_tokens = []
     i = 0
     while i < len(tokens):
@@ -150,7 +150,7 @@ def reduceArrowOperator(tokens):
     return reduced_tokens
 
 
-def splitList(delimiter, ls):
+def split_list(delimiter, ls):
     sublists = []
     current = []
     for element in ls:
@@ -162,7 +162,7 @@ def splitList(delimiter, ls):
     sublists.append(current)
     return sublists
 
-def splitSteps(steps):
+def split_steps(steps):
     substeps = []
     current = []
     i = 0
@@ -185,7 +185,7 @@ def splitSteps(steps):
     return substeps
 
 
-def extractList(tokens):
+def extract_list(tokens):
     extracted_list = []
     balance = 1
     i = 1
@@ -202,7 +202,7 @@ def extractList(tokens):
         i += 1
     return (extracted_list, i)
 
-def extractTuple(tokens):
+def extract_tuple(tokens):
     extracted_tuple = []
     balance = 1
     i = 1
@@ -215,7 +215,7 @@ def extractTuple(tokens):
             # skip commas
             pass
         elif tokens[i] == '[':
-            pt, inc = extractList(tokens[i:])
+            pt, inc = extract_list(tokens[i:])
             extracted_tuple.append(pt)
             i += inc-1
         else:
@@ -223,7 +223,7 @@ def extractTuple(tokens):
         i += 1
     return (extracted_tuple, i)
 
-def processRule(tokens):
+def process_rule(tokens):
     name, inc = '', 0
 
     i = 0
@@ -234,15 +234,15 @@ def processRule(tokens):
     inc = i
 
     i = 0
-    target_spec, adv = extractTuple(tokens[i:])
+    target_spec, adv = extract_tuple(tokens[i:])
     i += adv
     i += 1 # skip arrow operator
-    arguments, adv = extractTuple(tokens[i:])
+    arguments, adv = extract_tuple(tokens[i:])
     i += adv
 
     steps = []
     if inc:
-        steps = splitSteps(tokens[i:inc])
+        steps = split_steps(tokens[i:inc])
 
     args = {}
     for n, name in enumerate(arguments):
@@ -250,7 +250,7 @@ def processRule(tokens):
 
     return (args[arguments[0]][1:-1], {'arguments': args, 'steps': steps, 'dependencies': args[arguments[1]]}, inc)
 
-def processAssignment(tokens):
+def process_assignment(tokens):
     name, value, inc = '', None, 0
 
     i = 0
@@ -261,7 +261,7 @@ def processAssignment(tokens):
 
     return (name, value, inc)
 
-def processFunction(tokens):
+def process_function(tokens):
     name, arguments, inc = '', [], 0
 
     i = 0
@@ -274,34 +274,34 @@ def processFunction(tokens):
     i = 0
     name = tokens[i]
     i += 1 # skip name
-    arguments, adv = extractTuple(tokens[i:])
+    arguments, adv = extract_tuple(tokens[i:])
     i += adv
 
-    steps = splitList(',', tokens[i:inc])
+    steps = split_list(',', tokens[i:inc])
 
     return (name, arguments, steps, inc)
 
-def processTokens(tokens):
+def process_tokens(tokens):
     variables, functions, rules = {}, {}, {}
     i = 0
     while i < len(tokens):
         if tokens[i] == '(' and tokens[i+1][0] in ['"', "'"]:
-            name, rule, inc = processRule(tokens[i:])
+            name, rule, inc = process_rule(tokens[i:])
             rules[name] = rule
             i += inc
         elif name_regex.match(tokens[i]) and tokens[i+1] == '(':
-            name, arguments, steps, inc = processFunction(tokens[i:])
+            name, arguments, steps, inc = process_function(tokens[i:])
             functions[name] = {'arguments': arguments, 'steps': steps,}
             i += inc
         elif name_regex.match(tokens[i]) and tokens[i+1] == '=':
-            name, value, inc = processAssignment(tokens[i:])
+            name, value, inc = process_assignment(tokens[i:])
             variables[name] = value
             i += inc
         i += 1
     return (variables, functions, rules)
 
 
-def prepareStep(step, variables, arguments):
+def prepare_step(step, variables, arguments):
     parts = []
     for chunk in step:
         if chunk[0] in ["'", '"']:
@@ -318,10 +318,10 @@ def prepareStep(step, variables, arguments):
                 parts.append('$({0})'.format(chunk.upper()))
     return ' '.join(parts)
 
-def prepareExtendedSteps(step, variables, functions):
+def prepare_extended_steps(step, variables, functions):
     extended_steps = []
     name = step[0]
-    arguments, adv = extractTuple(step[1:])
+    arguments, adv = extract_tuple(step[1:])
     args = {}
     for n, arg_name in enumerate(functions[name]['arguments']):
         args[arg_name] = arguments[n]
@@ -334,7 +334,7 @@ def prepareExtendedSteps(step, variables, functions):
         extended_steps.append(current)
     return extended_steps
 
-def prepareOutput(variables, functions, rules):
+def prepare_output(variables, functions, rules):
     output_text = ''
     for k in sorted(variables.keys()):
         output_text += '{0}={1}\n'.format(k.upper(), variables[k][1:-1])
@@ -345,11 +345,11 @@ def prepareOutput(variables, functions, rules):
         final_steps = []
         for step in rules[name]['steps']:
             if step[0] in functions and step[1] == '(':
-                final_steps.extend(prepareExtendedSteps(step, variables, functions))
+                final_steps.extend(prepare_extended_steps(step, variables, functions))
             else:
                 final_steps.append(step)
         for step in final_steps:
-            output_text += '\t{0}\n'.format(prepareStep(step, variables, rules[name]['arguments']))
+            output_text += '\t{0}\n'.format(prepare_step(step, variables, rules[name]['arguments']))
         output_text += '\n'
     return output_text.rstrip('\n')
 
@@ -364,10 +364,10 @@ if __name__ == '__main__':
         source_text = ifstream.read()
 
 
-    raw_tokens = genericLexer(source_text)
-    tokens = reduceArrowOperator(raw_tokens)
+    raw_tokens = generic_lexer(source_text)
+    tokens = reduce_arrow_operator(raw_tokens)
 
-    variables, functions, rules = processTokens(tokens)
+    variables, functions, rules = process_tokens(tokens)
 
-    output_text = prepareOutput(variables, functions, rules)
+    output_text = prepare_output(variables, functions, rules)
     print(output_text)
