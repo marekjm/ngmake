@@ -469,12 +469,7 @@ def parse_elements(tokens):
     limit = len(tokens)
 
     while i < len(tokens):
-        if tokens[i][0] in ('"', "'"):
-            elements.append(tokens[i])
-            i += 1
-            if i < limit and tokens[i] != ',':
-                raise InvalidSyntax(tokens[i], 'missing comma')
-        elif tokens[i] == '[':
+        if tokens[i] == '[':
             balance = 1
             subsequence = []
 
@@ -491,6 +486,11 @@ def parse_elements(tokens):
 
             elements.append(parse_elements(subsequence))
 
+            if i < limit and tokens[i] != ',':
+                raise InvalidSyntax(tokens[i], 'missing comma')
+        else:
+            elements.append(tokens[i])
+            i += 1
             if i < limit and tokens[i] != ',':
                 raise InvalidSyntax(tokens[i], 'missing comma')
         i += 1
@@ -531,6 +531,37 @@ def prepare_target(tokens):
 
     target['target'] = elements[0]
     target['dependencies'] = elements[1]
+
+    # skip '->'
+    i += 1
+
+    names = []
+    while i < limit and tokens[i] != '->':
+        names.append(tokens[i])
+        i += 1
+
+    # strip '(' and ')'
+    names = names[1:-1]
+    names = parse_elements(names)
+    print(list(map(str, names)))
+
+    variables = {}
+
+    # set name
+    variables[str(names[0])] = str(elements[0])[1:-1]
+
+    # set dependencies
+    variables[str(names[1])] = list(map(lambda each: str(each)[1:-1], elements[1]))
+
+    for i, name in enumerate(names[2:]):
+        variables[str(name)[1:-1]] = elements[i+2]
+
+    target['variables'] = variables
+
+    # skip '->'
+    i += 1
+
+    target['body'] = tokens[i:]
 
     return target
 
