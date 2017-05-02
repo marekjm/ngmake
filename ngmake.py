@@ -80,6 +80,10 @@ import sys
 name_regex = re.compile('^[a-zA-Z_][a-zA-Z0-9_]*$')
 
 
+class InvalidSyntax(Exception):
+    pass
+
+
 def extract(source):
     quote = source[0]
     i = 1
