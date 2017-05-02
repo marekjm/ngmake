@@ -96,8 +96,36 @@ def extract(source):
         i += 1
     return source[:i+1]
 
+class Token:
+    def __init__(self, text, line, character):
+        self._text = text
+        self._line = line
+        self._character = character
+
+    def __repr__(self):
+        return super().__repr__()
+
+    def __str__(self):
+        return self._text
+
+    def __eq__(self, other):
+        if type(other) is str:
+            return self._text == other
+        elif type(other) is Token:
+            return (
+                (self._text == other._line) and
+                (self._line == other._line) and
+                (self._character == other._character)
+            )
+        else:
+            return False
+
+    def position(self):
+        return (self._line, self._character,)
+
+
 def generic_lexer(source):
-    line_no, byte_no, char_no = 0, 0, 0
+    line_no, char_no = 0, 0
     tokens = []
     token, c = '', ''
     punctuation = string.punctuation.replace('"', '').replace("'", '').replace('_', '')
@@ -107,11 +135,19 @@ def generic_lexer(source):
         c = source[i]
         if c == ' ' or c == '\t':
             if token:
-                tokens.append(token)
+                tokens.append(Token(
+                    text = token,
+                    line = line_no,
+                    character = char_no,
+                ))
                 token = ''
         elif c == '\n':
             if token:
-                tokens.append(token)
+                tokens.append(Token(
+                    text = token,
+                    line = line_no,
+                    character = char_no,
+                ))
                 token = ''
             line_no += 1
             char_no = 0
@@ -122,21 +158,36 @@ def generic_lexer(source):
             i += 2
         elif c in punctuation:
             if token:
-                tokens.append(token)
+                tokens.append(Token(
+                    text = token,
+                    line = line_no,
+                    character = char_no,
+                ))
                 token = ''
-            tokens.append(c)
+            tokens.append(Token(
+                text = c,
+                line = line_no,
+                character = char_no,
+            ))
         elif c == '"' or c == "'":
             if token:
-                tokens.append(token)
+                tokens.append(Token(
+                    text = token,
+                    line = line_no,
+                    character = char_no,
+                ))
                 token = ''
             token = extract(source[i:])
-            tokens.append(token)
+            tokens.append(Token(
+                text = token,
+                line = line_no,
+                character = char_no,
+            ))
             i += len(token)-1
             token = ''
         else:
             token += c
         i += 1
-        byte_no += 1
         char_no += 1
 
     return tokens
