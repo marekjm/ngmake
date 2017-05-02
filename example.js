@@ -36,3 +36,6 @@ let PHONY = (
 do ('build/bin/vm/cpu', ['src/front/cpu.cpp', 'build/cpu.o',]) -> (name, deps) ->
     'g++' '-o' name ...deps
 .
+
+let test = 'test' .
+do (test, []) -> (name, deps) -> 'g++' name .

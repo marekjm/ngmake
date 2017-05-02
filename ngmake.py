@@ -564,14 +564,7 @@ def prepare_target(tokens):
     # strip '(' and ')'
     header = header[1:-1]
 
-    # print(list(map(str, header)))
-
     elements = parse_elements(header)
-    # for i, each in enumerate(elements):
-    #     if type(each) is Token:
-    #         print(i, each)
-    #     else:
-    #         print(i, list(map(str, each)))
 
     target['target'] = elements[0]
     target['dependencies'] = elements[1]
@@ -586,8 +579,8 @@ def prepare_target(tokens):
 
     # strip '(' and ')'
     names = names[1:-1]
-    names = parse_elements(names)
-    print(list(map(str, names)))
+    names = list(map(str, parse_elements(names)))
+    target['names'] = names
 
     variables = {}
 
@@ -662,6 +655,50 @@ def prepare_variable(tokens):
 
     return variable
 
+def resolve(something, global_variables, local_variables):
+    value = None
+    if something[0] in ('"', "'",):
+        value = str(something)[1:-1]
+    else:
+        value = local_variables.get(str(something), global_variables.get(str(something)))
+    if value is None:
+        raise Exception(something, 'undefined variable: {}'.format(repr(str(something))))
+    return value
+
+def compile_header(source, global_variables):
+    target = {
+        'variables': source['variables'],
+    }
+
+    target['target'] = resolve(source['target'], global_variables, {})
+    target['variables'][source['names'][0]] = target['target']
+
+    return target
+
+def compile_body(target, source, global_variables):
+    tokens = source['body'][:-1]  # without final '.'
+    local_variables = source['variables']
+    body = []
+
+    i = 0
+    limit = len(tokens)
+
+    while i < limit:
+        each = tokens[i]
+        if each == '...':
+            i += 1
+            body.extend(resolve(tokens[i], global_variables, local_variables))
+        else:
+            body.append(resolve(each, global_variables, local_variables))
+        i += 1
+
+    target['body'] = body
+    return target
+
+def compile(source, global_variables):
+    target = compile_header(source, global_variables)
+    target = compile_body(target, source, global_variables)
+    return target
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
@@ -674,32 +711,18 @@ if __name__ == '__main__':
 
 
     raw_tokens = generic_lexer(source_text)
-    # for each in raw_tokens:
-    #     print(each.position(), each)
 
     tokens = reduce_arrow_operator(raw_tokens)
     tokens = reduce_spread_operator(tokens)
-    # for each in tokens:
-    #     print(each.position(), each)
 
     raw_targets = match_targets(tokens)
-    # for each in raw_targets:
-    #     print(list(map(str, each)))
 
     raw_variables = match_variables(tokens)
-    # for each in raw_variables:
-    #     print(list(map(str, each)))
 
-    targets = map(prepare_target, raw_targets)
-    # for each in targets:
-    #     print(each)
+    targets = list(map(prepare_target, raw_targets))
 
-    variables = map(prepare_variable, raw_variables)
-    # for each in variables:
-    #     print(each)
+    variables = dict({ each['name'] : each['value'] for each in map(prepare_variable, raw_variables) })
 
-
-    # variables, functions, rules = process_tokens(tokens)
-
-    # output_text = prepare_output(variables, functions, rules)
-    # print(output_text)
+    compiled_targets = map(lambda each: compile(source = each, global_variables = variables), targets)
+    for i, each in enumerate(compiled_targets):
+        print(i, each)
