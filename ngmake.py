@@ -115,6 +115,11 @@ def generic_lexer(source):
                 token = ''
             line_no += 1
             char_no = 0
+        elif i < (len(source)-1) and c == '/' and source[i+1] == '*':
+            i += 1
+            while i < len(source)-1 and not (source[i] == '*' and source[i+1] == '/'):
+                i += 1
+            i += 2
         elif c in punctuation:
             if token:
                 tokens.append(token)
