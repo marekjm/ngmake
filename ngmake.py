@@ -198,7 +198,7 @@ def reduce_arrow_operator(tokens):
     i = 0
     while i < len(tokens):
         if tokens[i] == '-' and tokens[i+1] == '>':
-            reduced_tokens.append('->')
+            reduced_tokens.append(Token('->', *(tokens[i].position())))
             i += 1
         else:
             reduced_tokens.append(tokens[i])
@@ -410,6 +410,49 @@ def prepare_output(variables, functions, rules):
     return output_text.rstrip('\n')
 
 
+def match_targets(tokens):
+    targets = []
+
+    i = 0
+    limit = len(tokens)
+
+    while i < limit:
+        if tokens[i] == 'do':
+            target = []
+            target.append(tokens[i])
+            i += 1
+            while i < limit:
+                target.append(tokens[i])
+                i += 1
+                if tokens[i-1] == '.':
+                    break
+            targets.append(target)
+        i += 1
+
+    return targets
+
+def match_variables(tokens):
+    variables = []
+
+    i = 0
+    limit = len(tokens)
+
+    while i < limit:
+        if tokens[i] == 'let':
+            variable = []
+            variable.append(tokens[i])
+            i += 1
+            while i < limit:
+                variable.append(tokens[i])
+                i += 1
+                if tokens[i-1] == '.':
+                    break
+            variables.append(variable)
+        i += 1
+
+    return variables
+
+
 if __name__ == '__main__':
     if len(sys.argv) < 2:
         print(__doc__)
@@ -421,9 +464,22 @@ if __name__ == '__main__':
 
 
     raw_tokens = generic_lexer(source_text)
+    # for each in raw_tokens:
+    #     print(each.position(), each)
+
     tokens = reduce_arrow_operator(raw_tokens)
+    # for each in tokens:
+    #     print(each.position(), each)
 
-    variables, functions, rules = process_tokens(tokens)
+    targets = match_targets(tokens)
+    for each in targets:
+        print(list(map(str, each)))
 
-    output_text = prepare_output(variables, functions, rules)
-    print(output_text)
+    variables = match_variables(tokens)
+    for each in variables:
+        print(list(map(str, each)))
+
+    # variables, functions, rules = process_tokens(tokens)
+
+    # output_text = prepare_output(variables, functions, rules)
+    # print(output_text)
