@@ -108,6 +108,9 @@ class Token:
     def __str__(self):
         return self._text
 
+    def __getitem__(self, i):
+        return self._text[i]
+
     def __eq__(self, other):
         if type(other) is str:
             return self._text == other
@@ -206,6 +209,9 @@ def reduce_arrow_operator(tokens):
     return reduced_tokens
 
 
+#############################################
+# OLD CODE BEGINS HERE
+#############################################
 def split_list(delimiter, ls):
     sublists = []
     current = []
@@ -408,6 +414,9 @@ def prepare_output(variables, functions, rules):
             output_text += '\t{0}\n'.format(prepare_step(step, variables, rules[name]['arguments']))
         output_text += '\n'
     return output_text.rstrip('\n')
+#############################################
+# OLD CODE ENDS HERE
+#############################################
 
 
 def match_targets(tokens):
@@ -453,6 +462,79 @@ def match_variables(tokens):
     return variables
 
 
+def parse_elements(tokens):
+    elements = []
+
+    i = 0
+    limit = len(tokens)
+
+    while i < len(tokens):
+        if tokens[i][0] in ('"', "'"):
+            elements.append(tokens[i])
+            i += 1
+            if i < limit and tokens[i] != ',':
+                raise InvalidSyntax(tokens[i], 'missing comma')
+        elif tokens[i] == '[':
+            balance = 1
+            subsequence = []
+
+            while i < limit and balance > 0:
+                subsequence.append(tokens[i])
+                if tokens[i] == '[':
+                    balance += 1
+                if tokens[i] == ']':
+                    balance -= 1
+                i += 1
+
+            # strip '[' and ']'
+            subsequence = subsequence[1:-1]
+
+            elements.append(parse_elements(subsequence))
+
+            if i < limit and tokens[i] != ',':
+                raise InvalidSyntax(tokens[i], 'missing comma')
+        i += 1
+
+    return elements
+
+def prepare_target(tokens):
+    target = {
+        'target': None,
+        'dependencies': [],
+        'variables': {},
+        'body': [],
+    }
+
+    i = 0
+    limit = len(tokens)
+
+    # skip 'do'
+    i += 1
+
+    # header runs until first '->'
+    header = []
+    while i < limit and tokens[i] != '->':
+        header.append(tokens[i])
+        i += 1
+
+    # strip '(' and ')'
+    header = header[1:-1]
+
+    # print(list(map(str, header)))
+
+    elements = parse_elements(header)
+    # for i, each in enumerate(elements):
+    #     if type(each) is Token:
+    #         print(i, each)
+    #     else:
+    #         print(i, list(map(str, each)))
+
+    target['target'] = elements[0]
+    target['dependencies'] = elements[1]
+
+    return target
+
+
 if __name__ == '__main__':
     if len(sys.argv) < 2:
         print(__doc__)
@@ -471,13 +553,18 @@ if __name__ == '__main__':
     # for each in tokens:
     #     print(each.position(), each)
 
-    targets = match_targets(tokens)
-    for each in targets:
+    raw_targets = match_targets(tokens)
+    for each in raw_targets:
         print(list(map(str, each)))
 
     variables = match_variables(tokens)
     for each in variables:
         print(list(map(str, each)))
+
+    targets = map(prepare_target, raw_targets)
+    for each in targets:
+        print(each)
+
 
     # variables, functions, rules = process_tokens(tokens)
 
