@@ -168,7 +168,9 @@ def processRule(tokens):
     arguments, adv = extractTuple(tokens[i:])
     i += adv
 
-    steps = splitSteps(tokens[i:inc])
+    steps = []
+    if inc:
+        steps = splitSteps(tokens[i:inc])
 
     args = {}
     for n, name in enumerate(arguments):
