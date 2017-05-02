@@ -28,5 +28,5 @@ let cxx = 'g++' .
 */
 
 do ('build/bin/vm/cpu', ['src/front/cpu.cpp', 'build/cpu.o',]) -> (name, deps) ->
-    'g++' '-o' name deps
+    'g++' '-o' name ...deps
 .

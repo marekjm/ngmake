@@ -212,6 +212,22 @@ def reduce_arrow_operator(tokens):
         i += 1
     return reduced_tokens
 
+def reduce_spread_operator(tokens):
+    reduced_tokens = []
+
+    i = 0
+    limit = len(tokens)
+
+    while i < limit:
+        if i < limit-3 and tokens[i] == '.' and tokens[i+1] == '.' and tokens[i+2] == '.':
+            reduced_tokens.append(Token('...', *(tokens[i].position())))
+            i += 2
+        else:
+            reduced_tokens.append(tokens[i])
+        i += 1
+
+    return reduced_tokens
+
 
 #############################################
 # OLD CODE BEGINS HERE
@@ -585,6 +601,7 @@ if __name__ == '__main__':
     #     print(each.position(), each)
 
     tokens = reduce_arrow_operator(raw_tokens)
+    tokens = reduce_spread_operator(tokens)
     # for each in tokens:
     #     print(each.position(), each)
 
