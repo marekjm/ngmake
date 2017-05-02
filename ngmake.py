@@ -229,6 +229,30 @@ def reduce_spread_operator(tokens):
     return reduced_tokens
 
 
+class NgmakeType:
+    def __str__(self):
+        return str(self._value)
+
+    def __repr__(self):
+        return repr(self._value)
+
+class List(NgmakeType):
+    def __init__(self, something):
+        self._value = something
+
+class Tuple(NgmakeType):
+    def __init__(self, something):
+        self._value = something
+
+class String(NgmakeType):
+    def __init__(self, something):
+        self._value = something
+
+class Atom(NgmakeType):
+    def __init__(self, something):
+        self._value = something
+
+
 #############################################
 # OLD CODE BEGINS HERE
 #############################################
@@ -473,9 +497,9 @@ def match_variables(tokens):
             i += 1
             while i < limit:
                 variable.append(tokens[i])
-                i += 1
-                if tokens[i-1] == '.':
+                if tokens[i] == '.':
                     break
+                i += 1
             variables.append(variable)
         i += 1
 
@@ -585,6 +609,59 @@ def prepare_target(tokens):
 
     return target
 
+def despecialise(something):
+    if type(something) is Token and str(something)[0] in ('"', "'",):
+        return String(str(something)[1:-1])
+    elif type(something) is Token and str(something)[0] not in ('"', "'",):
+        return Atom(str(something))
+    elif type(something) is list:
+        return List(list(map(despecialise, something)))
+    elif type(something) is tuple:
+        return Tuple(tuple(map(despecialise, something)))
+    else:
+        raise TypeError(type(something))
+
+SUBSEQUENCE_TYPES = { '[': list, '(': tuple, }
+
+def prepare_variable(tokens):
+    variable = {
+        'name': None,
+        'value': None,
+    }
+
+    i = 0
+    limit = len(tokens)
+
+    # skip 'let'
+    i += 1
+
+    variable['name'] = str(tokens[i])
+    i += 1
+
+    if tokens[i] != '=':
+        raise InvalidSyntax(tokens[i], 'missing assignment')
+
+    # skip '='
+    i += 1
+
+    if tokens[i] in ('[', '('):
+        subsequence_type = SUBSEQUENCE_TYPES[str(tokens[i])]
+        subsequence = tokens[i : -1]
+        i += len(subsequence)
+
+        # strip enclosing parentheses
+        subsequence = subsequence[1:-1]
+
+        variable['value'] = despecialise(subsequence_type(parse_elements(subsequence)))
+    else:
+        variable['value'] = despecialise(tokens[i])
+        i += 1
+
+    if tokens[i] != '.':
+        raise InvalidSyntax(str(tokens[i]), 'invalid variable declaration ending')
+
+    return variable
+
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
@@ -606,16 +683,20 @@ if __name__ == '__main__':
     #     print(each.position(), each)
 
     raw_targets = match_targets(tokens)
-    for each in raw_targets:
-        print(list(map(str, each)))
+    # for each in raw_targets:
+    #     print(list(map(str, each)))
 
-    variables = match_variables(tokens)
-    for each in variables:
-        print(list(map(str, each)))
+    raw_variables = match_variables(tokens)
+    # for each in raw_variables:
+    #     print(list(map(str, each)))
 
     targets = map(prepare_target, raw_targets)
-    for each in targets:
-        print(each)
+    # for each in targets:
+    #     print(each)
+
+    variables = map(prepare_variable, raw_variables)
+    # for each in variables:
+    #     print(each)
 
 
     # variables, functions, rules = process_tokens(tokens)

@@ -23,9 +23,15 @@ do ('build/bin/dummy',) -> (name) ->
 .
 */
 
-/*
 let cxx = 'g++' .
-*/
+let cxxoptions = [
+    '-Wall',
+    '-Wextra',
+    '-Werror',
+].
+let PHONY = (
+    'build/bin/vm/cpu',
+).
 
 do ('build/bin/vm/cpu', ['src/front/cpu.cpp', 'build/cpu.o',]) -> (name, deps) ->
     'g++' '-o' name ...deps
