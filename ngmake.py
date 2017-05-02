@@ -505,6 +505,27 @@ def match_variables(tokens):
 
     return variables
 
+def match_macros(tokens):
+    targets = []
+
+    i = 0
+    limit = len(tokens)
+
+    while i < limit:
+        if tokens[i] == 'macro':
+            target = []
+            target.append(tokens[i])
+            i += 1
+            while i < limit:
+                target.append(tokens[i])
+                i += 1
+                if tokens[i-1] == '.':
+                    break
+            targets.append(target)
+        i += 1
+
+    return targets
+
 
 def parse_elements(tokens):
     elements = []
@@ -601,6 +622,40 @@ def prepare_target(tokens):
     target['body'] = tokens[i:]
 
     return target
+
+def prepare_macro(tokens):
+    macro = {
+        'name': None,
+        'parameters': (),
+        'body': [],
+    }
+
+    i = 0
+    limit = len(tokens)
+
+    # strip 'macro'
+    i += 1
+
+    macro['name'] = str(tokens[i])
+    i += 1
+
+    parameters = []
+    while i < limit and tokens[i] != '->':
+        parameters.append(tokens[i])
+        i += 1
+
+    # strip '(' and ')'
+    parameters = parameters[1:-1]
+    parameters = tuple(map(str, parse_elements(parameters)))
+    macro['parameters'] = parameters
+
+    # skip '->'
+    i += 1
+
+    # without the final '.'
+    macro['body'] = tokens[i:-1]
+
+    return macro
 
 def despecialise(something):
     if type(something) is Token and str(something)[0] in ('"', "'",):
@@ -716,8 +771,10 @@ if __name__ == '__main__':
     tokens = reduce_spread_operator(tokens)
 
     raw_targets = match_targets(tokens)
-
     raw_variables = match_variables(tokens)
+    raw_macros = match_macros(tokens)
+
+    macros = list(map(prepare_macro, raw_macros))
 
     targets = list(map(prepare_target, raw_targets))
 

@@ -33,6 +33,10 @@ let PHONY = (
     'build/bin/vm/cpu',
 ).
 
+macro echo ( message ) ->
+    'echo' message
+.
+
 do ('build/bin/vm/cpu', ['src/front/cpu.cpp', 'build/cpu.o',]) -> (name, deps) ->
     'g++' '-o' name ...deps
 .
