@@ -535,9 +535,9 @@ def parse_elements(tokens):
 
     while i < len(tokens):
         if tokens[i] == '[':
-            balance = 1
             subsequence = [tokens[i]]
             i += 1
+            balance = 1
 
             while i < limit and balance > 0:
                 subsequence.append(tokens[i])
@@ -559,6 +559,25 @@ def parse_elements(tokens):
             i += 1
             if i < limit and tokens[i] != ',':
                 raise InvalidSyntax(tokens[i], 'missing comma')
+        i += 1
+
+    return elements
+
+def parse_parameters_list(tokens):
+    elements = []
+
+    i = 0
+    limit = len(tokens)
+
+    while i < len(tokens):
+        if tokens[i] == '...':
+            elements.append(Token(('...' + str(tokens[i+1])), *(tokens[i].position())))
+            i += 1
+        else:
+            elements.append(tokens[i])
+        i += 1
+        if i < limit and tokens[i] != ',':
+            raise InvalidSyntax(tokens[i], 'missing comma')
         i += 1
 
     return elements
@@ -624,20 +643,13 @@ def prepare_target(tokens):
 
     return target
 
-def prepare_macro(tokens):
-    macro = {
-        'name': None,
-        'parameters': (),
-        'body': [],
-    }
+def prepare_macro_clause(tokens):
+    macro = {}
 
     i = 0
     limit = len(tokens)
 
-    # strip 'macro'
-    i += 1
-
-    macro['name'] = str(tokens[i])
+    # skip name
     i += 1
 
     parameters = []
@@ -647,13 +659,48 @@ def prepare_macro(tokens):
 
     # strip '(' and ')'
     parameters = parameters[1:-1]
-    parameters = tuple(map(str, parse_elements(parameters)))
+    parameters = tuple(map(str, parse_parameters_list(parameters)))
     macro['parameters'] = parameters
 
     # skip '->'
     i += 1
 
     macro['body'] = tokens[i:]
+
+    return macro
+
+def split_macro_overloads(tokens):
+    overloads = []
+
+    clause = []
+    i = 0
+    limit = len(tokens)
+
+    while i < limit:
+        clause.append(tokens[i])
+        if tokens[i] in (';', '.',):
+            overloads.append(clause)
+            clause = []
+        i += 1
+
+    return overloads
+
+def prepare_macro(tokens):
+    macro = {
+        'name': None,
+        'overloads': [],
+    }
+
+    i = 0
+    limit = len(tokens)
+
+    # strip 'macro'
+    i += 1
+
+    macro['name'] = str(tokens[i])
+
+    overloads = split_macro_overloads(tokens[i:])
+    macro['overloads'] = list(map(prepare_macro_clause, overloads))
 
     return macro
 
@@ -754,24 +801,33 @@ def compile_body(target, source, global_variables, macros, local_variables = Non
             subsequence = [tokens[i]]
             i += 1
             balance = 1
-            while i < limit and balance > 0:
+            while i < limit:
                 subsequence.append(tokens[i])
                 if tokens[i] == '(':
                     balance += 1
                 if tokens[i] == ')':
                     balance -= 1
+                if balance <= 0:
+                    break
                 i += 1
 
             # strip '(' and ')'
             subsequence = subsequence[1:-1]
-            print(list(map(str, subsequence)))
             subsequence = parse_elements(subsequence)
 
-            macro_parameters = {}
-            for j, p in enumerate(macros[macro_name]['parameters']):
-                macro_parameters[p] = despecialise(subsequence[j])
+            selected_overload = None
+            for clause in macros[macro_name]:
+                if len(clause['parameters']) != len(subsequence):
+                    continue
+                selected_overload = clause
+            if selected_overload is None:
+                raise Exception(each, 'could not find matching macro')
 
-            compiled = compile_body({}, macros[macro_name], global_variables, macros, macro_parameters)
+            macro_parameters = {}
+            for j, param in enumerate(selected_overload['parameters']):
+                macro_parameters[param] = resolve(subsequence[j], global_variables, local_variables)
+
+            compiled = compile_body({}, selected_overload, global_variables, macros, macro_parameters)
             body.extend(compiled['body'])
         else:
             body.append(resolve(each, global_variables, local_variables))
@@ -800,7 +856,6 @@ if __name__ == '__main__':
     with open(source_file) as ifstream:
         source_text = ifstream.read()
 
-
     raw_tokens = generic_lexer(source_text)
 
     tokens = reduce_arrow_operator(raw_tokens)
@@ -810,9 +865,13 @@ if __name__ == '__main__':
     raw_variables = match_variables(tokens)
     raw_macros = match_macros(tokens)
 
-    macros = dict({ each['name']: { 'parameters': each['parameters'], 'body': each['body'], } for each in map(prepare_macro, raw_macros) })
+    macros = dict({ each['name']: each['overloads'] for each in map(prepare_macro, raw_macros) })
+    # for each in macros:
+    #     print(each, macros[each])
 
     targets = list(map(prepare_target, raw_targets))
+    # for each in targets:
+    #     print(str(each['target']), list(map(str, each['body'])))
 
     variables = dict({ each['name'] : each['value'] for each in map(prepare_variable, raw_variables) })
 

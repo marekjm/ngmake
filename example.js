@@ -35,15 +35,18 @@ let PHONY = (
 
 macro echo ( message ) ->
     'echo' message
+; echo ( opts, message ) ->
+    'echo' ...opts message
 .
 
 do ('build/bin/vm/cpu', ['src/front/cpu.cpp', 'build/cpu.o',]) -> (name, deps) ->
-    'g++' '-o' name ...deps
+    'g++' '-o' name ...deps ,
+    echo ( deps, name )
 .
 
 let test = 'test' .
 do (test, []) -> (name, deps) ->
     'g++' name ,
     echo ( 'Hello World!' ) ,
-    echo ( name )
+    echo ( deps, name )
 .
