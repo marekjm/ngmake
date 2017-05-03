@@ -7,7 +7,7 @@ relationships between different files in a source code repository.
 These relationships are then used to drive incremental compilations.
 
 Ngmake source compiles to GNU Makefiles.
-This is because Make is a good-enough program, but the syntax of Makefiles is horrible.
+This is because Make is a good program, but the syntax of Makefiles is horrible.
 Ngmake does not try to reinvent Make - it reinvents the language used by it.
 
 
@@ -20,113 +20,72 @@ Ngmake has a few features that can ease the life of programmers.
 
 ### Variables
 
-Variables are processed before any further processing is performed.
+No trickery. No guessing.
+All variables are analysed before target and macro expansion, and
+all variables are available to any target or macro.
+Local variables shadow those in outer scopes.
+
+```
+let <name> = <value> .
+```
+
+For example:
+
+```
+/* a simple string */
+let cxx = 'g++' .
+
+/* or a list */
+let cxxoptions = [ '-Wall', '-Werror', ] .
+
+/* or a tuple */
+let PHONY = ( 'all', ) .
+```
 
 
 ### Targets
 
-Targets specify output path and dependencies.
+Targets specify output path and dependencies, bind them to local variable names, and expand macros.
 They compile to Makefile rules.
 
+```
+do (<target>, [<dependencies>...]) -> (<bindings>) -> <body> .
+```
 
-### Functions
+For example:
+
+```
+do ( './build/bin/hello_world', [ './src/hello_world.cpp', ]) -> (name, deps) ->
+    'g++' '-o' name ...deps  /* the '...' operator spreads list into individual items
+.
+```
+
+
+### Macros
 
 Don't repeat yourself.
-Ngmake supports multi-step functions that can do much more than plain Make `.X.Y:` rules.
-
-
-----
-
-## Syntax
-
-Brief description of Ngmake syntax.
-
-
-### Variables
+Macros can span multiple steps, support recursion, and a very limited form of pattern matching.
 
 ```
-variable_name = 'variable value'.
-```
-
-Variables consist of a name, followed by the `=` character, followed by a string.
-A full stop ends a variable definition.
-Variables can only hold strings.
-
-
-### Targets
-
-*Basic example*
-
-```
-('build/target/name', ['first/dependency.cpp', 'second/dependency.o']) -> (target, dependencies)
-    'rm -f' target,
-    cxx '-o' target dependencies
+macro <name> ( <parameters-0>... ) ->
+    <body>
+; <name> ( <parameters-1>... ) ->
+    <body>
+; <name> ( <parameters-N>... ) ->
+    <body>
 .
 ```
 
-The example above has two parameters:
-
-0. target's name (`'build/target/name'`) bound to `target` variable,
-1. target's dependencies (`['first/dependency', 'second/dependency']`) bound to `dependencies` variable,
-
-Bound variables are visible only inside target's body.
-Steps are separate by commas.
-Target body is terminated by a full stop.
-
-
-*More advanced example*
+For example:
 
 ```
-cxx = 'g++'.
-
-('build/target/name', ['first/dependency.cpp', 'second/dependency.o'], 'clang++') -> (target, dependencies, cxx)
-    'rm -f' target,
-    cxx '-o' target dependencies
+macro compile ( output, dependencies ) ->
+    cxx ...cxxoptions '-o' output ...dependencies
+; compile ( output ) ->
+    cxx ...cxxoptions '-o' output
 .
 ```
 
-The example above has two parameters:
-
-0. target's name (`'build/target/name'`) bound to `target` variable,
-1. target's dependencies (`['first/dependency', 'second/dependency']`) bound to `dependencies` variable,
-2. alternative compiler's name given as a string bound to `cxx` variable,
-
-In the compiled Makefile, `build/target/name` will be compiled with Clang++ instead of G++ because the global `cxx` variable
-was shadowed.
-
-
-### Functions
-
-Functions act more like macros.
-They are expanded in the place they are called.
-Functions can only be called from targets to prevent infinite recursion as Ngmake has no control structures.
-
-Steps are separate by commas.
-Function body is terminated by a full stop.
-
-```
-compile(target, dependencies)
-    cxx '-o' target dependencies
-.
-
-remove(file)
-    'rm -f' file
-.
-
-('build/target/name', ['first/dependency.cpp', 'second/dependency.o']) -> (target, dependencies)
-    remove(target),
-    compile(target, dependencies)
-.
-```
-
-The example above is expanded to the code below before final compilation:
-
-```
-('build/target/name', ['first/dependency.cpp', 'second/dependency.o']) -> (target, dependencies)
-    'rm -f' target,
-    cxx '-o' target dependencies
-.
-```
 
 ----
 
