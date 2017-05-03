@@ -642,45 +642,47 @@ if __name__ == '__main__':
 
     source_file = sys.argv[1 + int(flag_debugging)]
 
-    source_text = ''
-    with open(source_file) as ifstream:
-        source_text = ifstream.read()
+    try:
+        source_text = ''
+        with open(source_file) as ifstream:
+            source_text = ifstream.read()
 
-    raw_tokens = generic_lexer(source_text)
+        raw_tokens = generic_lexer(source_text)
 
-    tokens = reduce_arrow_operator(raw_tokens)
-    tokens = reduce_spread_operator(tokens)
+        tokens = reduce_arrow_operator(raw_tokens)
+        tokens = reduce_spread_operator(tokens)
 
-    raw_targets = match_targets(tokens)
-    raw_variables = match_variables(tokens)
-    raw_macros = match_macros(tokens)
+        raw_targets = match_targets(tokens)
 
-    macros = dict({ each['name']: each['overloads'] for each in map(prepare_macro, raw_macros) })
-    # for each in macros:
-    #     print(each, macros[each])
+        raw_variables = match_variables(tokens)
+        raw_macros = match_macros(tokens)
 
-    targets = list(map(prepare_target, raw_targets))
-    # for each in targets:
-    #     print(str(each['target']), list(map(str, each['body'])))
+        macros = dict({ each['name']: each['overloads'] for each in map(prepare_macro, raw_macros) })
 
-    variables = dict({ each['name'] : each['value'] for each in map(prepare_variable, raw_variables) })
+        targets = list(map(prepare_target, raw_targets))
 
-    compiled_targets = map(lambda each: compile(source = each, global_variables = variables, macros = macros), targets)
-    if flag_debugging:
-        list(compiled_targets)
-    else:
-        for i, each in enumerate(compiled_targets):
-            lines = []
-            line = []
-            each['body'].append('\n')
-            for part in each['body']:
-                line.append(part)
-                if part == '\n':
-                    lines.append('\t' + ' '.join(map(str, line)))
-                    line = []
-                    continue
-            print('{target}: {dependencies}\n{body}'.format(
-                target = each['target'],
-                dependencies = ' '.join(map(str, map(despecialise, each['dependencies']))),
-                body = ''.join(lines),
-            ))
+        variables = dict({ each['name'] : each['value'] for each in map(prepare_variable, raw_variables) })
+
+        compiled_targets = map(lambda each: compile(source = each, global_variables = variables, macros = macros), targets)
+        if flag_debugging:
+            list(compiled_targets)
+        else:
+            for i, each in enumerate(compiled_targets):
+                lines = []
+                line = []
+                each['body'].append('\n')
+                for part in each['body']:
+                    line.append(part)
+                    if part == '\n':
+                        lines.append('\t' + ' '.join(map(str, line)))
+                        line = []
+                        continue
+                print('{target}: {dependencies}\n{body}'.format(
+                    target = each['target'],
+                    dependencies = ' '.join(map(str, map(despecialise, each['dependencies']))),
+                    body = ''.join(lines),
+                ))
+    except InvalidSyntax as e:
+        token, message = e.args
+        line, character = token.position()
+        print('error: {}:{}:{}: {}: {}'.format(source_file, line+1, character+1, repr(str(token)), message))
