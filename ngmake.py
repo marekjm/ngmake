@@ -475,9 +475,6 @@ def prepare_target(tokens):
         # set dependencies
         variables[str(names[1])] = list(map(lambda each: str(each)[1:-1], target['dependencies']))
 
-    for i, name in enumerate(names[2:]):
-        variables[str(name)[1:-1]] = elements[i+2]
-
     target['variables'] = variables
 
     # skip '->'
