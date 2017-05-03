@@ -56,7 +56,7 @@ For example:
 
 ```
 do ( './build/bin/hello_world', [ './src/hello_world.cpp', ]) -> (name, deps) ->
-    'g++' '-o' name ...deps  /* the '...' operator spreads list into individual items
+    'g++' '-o' name ...deps  /* the '...' operator spreads list into individual items */
 .
 ```
 
