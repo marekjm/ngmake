@@ -723,6 +723,7 @@ if __name__ == '__main__':
         flag_debugging = True
 
     source_file = sys.argv[1 + int(flag_debugging)]
+    selected_target = (sys.argv[2 + int(flag_debugging)] if len(sys.argv) > (2 + int(flag_debugging)) else None)
 
     try:
         source_text = ''
@@ -745,7 +746,13 @@ if __name__ == '__main__':
 
         variables = dict({ each['name'] : each['value'] for each in map(prepare_variable, raw_variables) })
 
-        compiled_targets = map(lambda each: compile(source = each, global_variables = variables, macros = macros), targets)
+        compiled_targets = []
+        if selected_target is None:
+            compiled_targets = map(lambda each: compile(source = each, global_variables = variables, macros = macros), targets)
+        else:
+
+            targets = filter(lambda each: str(each['target'])[1:-1] == selected_target, targets)
+            compiled_targets = map(lambda each: compile(source = each, global_variables = variables, macros = macros), targets)
         if flag_debugging:
             list(compiled_targets)
         else:

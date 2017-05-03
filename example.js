@@ -51,3 +51,16 @@ do ('what', ['foo', 'bar', 'bax']) -> (name, deps) ->
 do ('heh', ['0', '1', '2', '3', '4']) -> (name, deps) ->
     echo( ...reverse( ...deps, nope() ) )
 .
+
+/*
+macro compile ( output, ...deps ) ->
+    cxx ...cxxoptions '-o' output ...deps
+.
+*/
+macro compile ( ...all ) ->
+    cxx ...cxxoptions '-o' ...all
+.
+
+do ('build/bin/vm/kernel', ['src/front/cpu.cpp', 'build/cpu.o']) -> (name, deps) ->
+    compile(name, ...deps)
+.
