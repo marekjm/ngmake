@@ -375,7 +375,7 @@ def parse_parameters_list(tokens):
 
     return elements
 
-def parse_arguments_list(tokens, global_variables, local_variables):
+def parse_arguments_list(tokens, macros, global_variables, local_variables):
     arguments = []
 
     i = 0
@@ -384,9 +384,13 @@ def parse_arguments_list(tokens, global_variables, local_variables):
     while i < len(tokens):
         if tokens[i] == '...':
             i += 1
-            arguments.extend(resolve(tokens[i], global_variables, local_variables))
+            skip, value = evaluate(tokens[i:], macros, global_variables, local_variables)
+            arguments.extend(value[0])
+            i += skip
         else:
-            arguments.append(resolve(tokens[i], global_variables, local_variables))
+            skip, value = evaluate(tokens[i:], macros, global_variables, local_variables)
+            arguments.extend(value)
+            i += skip
         i += 1
         if i < limit and tokens[i] != ',':
             raise InvalidSyntax(tokens[i], 'missing comma')
@@ -590,7 +594,7 @@ def compile_header(source, global_variables):
 
     return target
 
-def evaluate(tokens, global_variables, local_variables):
+def evaluate(tokens, macros, global_variables, local_variables):
     value = []
 
     print('EVALUATE:', list(map(str, tokens)))
@@ -622,7 +626,7 @@ def evaluate(tokens, global_variables, local_variables):
 
         # strip '(' and ')'
         subsequence = subsequence[1:-1]
-        subsequence = parse_arguments_list(subsequence, global_variables, local_variables)
+        subsequence = parse_arguments_list(subsequence, macros, global_variables, local_variables)
 
         selected_overload = None
         for clause in macros[macro_name]:
@@ -668,13 +672,13 @@ def compile_body(target, source, global_variables, macros, local_variables = Non
 
         if each == '...':
             i += 1
-            skip, value = evaluate(tokens[i:], global_variables, local_variables)
+            skip, value = evaluate(tokens[i:], macros, global_variables, local_variables)
             body.extend(value[0])
             i += skip
         elif each == ',':
             body.append('\n')
         elif str(each) in macros:
-            skip, value = evaluate(tokens[i:], global_variables, local_variables)
+            skip, value = evaluate(tokens[i:], macros, global_variables, local_variables)
             i += skip
             body.extend(value)
         else:

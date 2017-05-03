@@ -12,6 +12,7 @@ macro echo ( ...all ) ->
     'echo' ...all
 .
 
+/*
 do ('build/bin/vm/cpu', ['src/front/cpu.cpp', 'build/cpu.o',]) -> (name, deps) ->
     'g++' '-o' name ...deps ,
     echo ( ...deps, name )
@@ -27,16 +28,21 @@ do (test, []) -> (name, deps) ->
 do ('dafuq', ['foo', 'bar', 'bax', 'bay', 'baz',]) -> (name, deps) ->
     echo ( name, ...deps )
 .
+*/
 
-/*
 macro nope () ->
     'Hello World!'
 .
 
-do ('what', ['foo', 'bar', 'bax']) -> (name, deps) ->
-    echo( nope() )
+macro gather ( something ) ->
+    something
+; gather ( ...all ) ->
+    all
 .
-*/
+
+do ('what', ['foo', 'bar', 'bax']) -> (name, deps) ->
+    echo( ...gather( ...deps ) )
+.
 
 /*
 macro reverse ( first, ...rest ) ->
