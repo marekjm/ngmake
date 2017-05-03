@@ -591,7 +591,6 @@ def compile_header(source, global_variables):
     return target
 
 def evaluate(tokens, global_variables, local_variables):
-    skip = 1
     value = []
 
     print('EVALUATE:', list(map(str, tokens)))
@@ -603,11 +602,58 @@ def evaluate(tokens, global_variables, local_variables):
     i += 1
 
     if str(each) in macros:
-        pass
+        macro_name = str(each)
+
+        if tokens[i] != '(':
+            raise InvalidSyntax(tokens[i-1], 'missing opening parentheses')
+
+        subsequence = [tokens[i]]
+        i += 1
+        balance = 1
+        while i < limit:
+            subsequence.append(tokens[i])
+            if tokens[i] == '(':
+                balance += 1
+            if tokens[i] == ')':
+                balance -= 1
+            if balance <= 0:
+                break
+            i += 1
+
+        # strip '(' and ')'
+        subsequence = subsequence[1:-1]
+        subsequence = parse_arguments_list(subsequence, global_variables, local_variables)
+
+        selected_overload = None
+        for clause in macros[macro_name]:
+            parameters_length = len(clause['parameters'])
+            mismatched_lengths = parameters_length != len(subsequence)
+            last_parameter_packs = bool(parameters_length and str(clause['parameters'][-1]).startswith('...'))
+            arguments_can_be_packed = ((len(subsequence) >= parameters_length) and last_parameter_packs)
+            if len(subsequence) == 0 and parameters_length == 1 and last_parameter_packs:
+                arguments_can_be_packed = True
+
+            if mismatched_lengths and not arguments_can_be_packed:
+                continue
+            selected_overload = clause
+            break
+        if selected_overload is None:
+            raise Exception(each, 'could not find matching macro')
+
+        macro_parameters = {}
+        for j, param in enumerate(selected_overload['parameters']):
+            if param.startswith('...'):
+                param = param[3:]
+                macro_parameters[param] = subsequence[j:]
+            else:
+                macro_parameters[param] = subsequence[j]
+
+        compiled = compile_body({}, selected_overload, global_variables, macros, macro_parameters)
+        value = compiled['body']
     else:
         value = [resolve(each, global_variables, local_variables)]
 
-    return skip, value
+    return i, value
 
 def compile_body(target, source, global_variables, macros, local_variables = None):
     tokens = source['body'][:-1]  # without final '.'
@@ -623,61 +669,14 @@ def compile_body(target, source, global_variables, macros, local_variables = Non
         if each == '...':
             i += 1
             skip, value = evaluate(tokens[i:], global_variables, local_variables)
-            print(value)
             body.extend(value[0])
             i += skip
         elif each == ',':
             body.append('\n')
         elif str(each) in macros:
-            macro_name = str(each)
-            i += 1
-
-            if tokens[i] != '(':
-                raise InvalidSyntax(tokens[i-1], 'missing opening parentheses')
-
-            subsequence = [tokens[i]]
-            i += 1
-            balance = 1
-            while i < limit:
-                subsequence.append(tokens[i])
-                if tokens[i] == '(':
-                    balance += 1
-                if tokens[i] == ')':
-                    balance -= 1
-                if balance <= 0:
-                    break
-                i += 1
-
-            # strip '(' and ')'
-            subsequence = subsequence[1:-1]
-            subsequence = parse_arguments_list(subsequence, global_variables, local_variables)
-
-            selected_overload = None
-            for clause in macros[macro_name]:
-                parameters_length = len(clause['parameters'])
-                mismatched_lengths = parameters_length != len(subsequence)
-                last_parameter_packs = bool(parameters_length and str(clause['parameters'][-1]).startswith('...'))
-                arguments_can_be_packed = ((len(subsequence) >= parameters_length) and last_parameter_packs)
-                if len(subsequence) == 0 and parameters_length == 1 and last_parameter_packs:
-                    arguments_can_be_packed = True
-
-                if mismatched_lengths and not arguments_can_be_packed:
-                    continue
-                selected_overload = clause
-                break
-            if selected_overload is None:
-                raise Exception(each, 'could not find matching macro')
-
-            macro_parameters = {}
-            for j, param in enumerate(selected_overload['parameters']):
-                if param.startswith('...'):
-                    param = param[3:]
-                    macro_parameters[param] = subsequence[j:]
-                else:
-                    macro_parameters[param] = subsequence[j]
-
-            compiled = compile_body({}, selected_overload, global_variables, macros, macro_parameters)
-            body.extend(compiled['body'])
+            skip, value = evaluate(tokens[i:], global_variables, local_variables)
+            i += skip
+            body.extend(value)
         else:
             body.append(resolve(each, global_variables, local_variables))
         i += 1
@@ -745,3 +744,4 @@ if __name__ == '__main__':
         token, message = e.args
         line, character = token.position()
         print('error: {}:{}:{}: {}: {}'.format(source_file, line+1, character+1, repr(str(token)), message))
+        raise e

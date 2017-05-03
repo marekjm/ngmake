@@ -28,9 +28,15 @@ do ('dafuq', ['foo', 'bar', 'bax', 'bay', 'baz',]) -> (name, deps) ->
     echo ( name, ...deps )
 .
 
-macro echo ( ...all ) ->
-    'echo' ...all
+/*
+macro nope () ->
+    'Hello World!'
 .
+
+do ('what', ['foo', 'bar', 'bax']) -> (name, deps) ->
+    echo( nope() )
+.
+*/
 
 /*
 macro reverse ( first, ...rest ) ->
