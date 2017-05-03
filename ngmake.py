@@ -237,11 +237,14 @@ class NgmakeType:
         return str(self._value)
 
     def __repr__(self):
-        return repr(self._value)
+        return str(type(self)).split('.')[-1][:-2] + ' ' + repr(self._value)
 
 class List(NgmakeType):
     def __init__(self, something):
         self._value = something
+
+    def __getitem__(self, i):
+        return self._value[i]
 
 class Tuple(NgmakeType):
     def __init__(self, something):
@@ -671,6 +674,8 @@ def evaluate(tokens, macros, global_variables, local_variables):
             else:
                 macro_parameters[param] = subsequence[j]
 
+        print((_evalueate_nest_level * '|  ') + 'COMPILING-MACRO:', macro_name)
+
         compiled = compile_body({}, selected_overload, global_variables, macros, macro_parameters)
         value = compiled['body']
     else:
@@ -692,11 +697,13 @@ def compile_body(target, source, global_variables, macros, local_variables = Non
     while i < limit:
         each = tokens[i]
 
+        print('EACH:', str(each))
+
         if each == '...':
             i += 1
             skip, value = evaluate(tokens[i:], macros, global_variables, local_variables)
             body.extend(value[0])
-            i += skip
+            i += skip - 1
         elif each == ',':
             body.append('\n')
         elif str(each) in macros:
@@ -706,6 +713,9 @@ def compile_body(target, source, global_variables, macros, local_variables = Non
         else:
             body.append(resolve(each, global_variables, local_variables))
         i += 1
+
+        print('BODY:', body)
+        print('TOKENS-LEFT:', list(map(str, tokens[i:])))
 
     target['body'] = body
     return target
