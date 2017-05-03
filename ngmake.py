@@ -311,9 +311,9 @@ def match_macros(tokens):
             i += 1
             while i < limit:
                 target.append(tokens[i])
-                i += 1
-                if tokens[i-1] == '.':
+                if tokens[i] == '.':
                     break
+                i += 1
             targets.append(target)
         i += 1
 
