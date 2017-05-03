@@ -33,20 +33,22 @@ let PHONY = (
     'build/bin/vm/cpu',
 ).
 
-macro echo ( message ) ->
-    'echo' message
-; echo ( opts, message ) ->
-    'echo' ...opts message
+macro echo ( ...all ) ->
+    'echo' ...all
 .
 
 do ('build/bin/vm/cpu', ['src/front/cpu.cpp', 'build/cpu.o',]) -> (name, deps) ->
     'g++' '-o' name ...deps ,
-    echo ( deps, name )
+    echo ( ...deps, name )
 .
 
 let test = 'test' .
 do (test, []) -> (name, deps) ->
     'g++' name ,
     echo ( 'Hello World!' ) ,
-    echo ( deps, name )
+    echo ( ...deps )
+.
+
+do ('dafuq', ['foo', 'bar', 'bax', 'bay', 'baz',]) -> (name, deps) ->
+    echo ( name, ...deps )
 .
