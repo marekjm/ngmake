@@ -259,68 +259,35 @@ class Atom(NgmakeType):
         self._value = something
 
 
-def match_targets(tokens):
-    targets = []
+def _match_group_from_to_dot(from_token):
+    matches = []
 
     i = 0
     limit = len(tokens)
 
     while i < limit:
-        if tokens[i] == 'do':
-            target = []
-            target.append(tokens[i])
+        if tokens[i] == from_token:
+            part = []
+            part.append(tokens[i])
             i += 1
             while i < limit:
-                target.append(tokens[i])
+                part.append(tokens[i])
                 if tokens[i] == '.':
                     break
                 i += 1
-            targets.append(target)
+            matches.append(part)
         i += 1
 
-    return targets
+    return matches
+
+def match_targets(tokens):
+    return _match_group_from_to_dot('do')
 
 def match_variables(tokens):
-    variables = []
-
-    i = 0
-    limit = len(tokens)
-
-    while i < limit:
-        if tokens[i] == 'let':
-            variable = []
-            variable.append(tokens[i])
-            i += 1
-            while i < limit:
-                variable.append(tokens[i])
-                if tokens[i] == '.':
-                    break
-                i += 1
-            variables.append(variable)
-        i += 1
-
-    return variables
+    return _match_group_from_to_dot('let')
 
 def match_macros(tokens):
-    targets = []
-
-    i = 0
-    limit = len(tokens)
-
-    while i < limit:
-        if tokens[i] == 'macro':
-            target = []
-            target.append(tokens[i])
-            i += 1
-            while i < limit:
-                target.append(tokens[i])
-                if tokens[i] == '.':
-                    break
-                i += 1
-            targets.append(target)
-        i += 1
-
-    return targets
+    return _match_group_from_to_dot('macro')
 
 
 def parse_elements(tokens):
