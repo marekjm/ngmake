@@ -145,7 +145,7 @@ def generic_lexer(source):
                 tokens.append(Token(
                     text = token,
                     line = line_no,
-                    character = char_no,
+                    character = (char_no - len(token)),
                 ))
                 token = ''
         elif c == '\n':
@@ -153,7 +153,7 @@ def generic_lexer(source):
                 tokens.append(Token(
                     text = token,
                     line = line_no,
-                    character = char_no,
+                    character = (char_no - len(token)),
                 ))
                 token = ''
             line_no += 1
@@ -161,34 +161,37 @@ def generic_lexer(source):
         elif i < (len(source)-1) and c == '/' and source[i+1] == '*':
             i += 1
             while i < len(source)-1 and not (source[i] == '*' and source[i+1] == '/'):
+                if source[i] == '\n':
+                    line_no += 1
                 i += 1
             i += 2
+            continue
         elif c in punctuation:
             if token:
                 tokens.append(Token(
                     text = token,
                     line = line_no,
-                    character = char_no,
+                    character = (char_no - len(token)),
                 ))
                 token = ''
             tokens.append(Token(
                 text = c,
                 line = line_no,
-                character = char_no,
+                character = (char_no - len(token)),
             ))
         elif c == '"' or c == "'":
             if token:
                 tokens.append(Token(
                     text = token,
                     line = line_no,
-                    character = char_no,
+                    character = (char_no - len(token)),
                 ))
                 token = ''
             token = extract(source[i:])
             tokens.append(Token(
                 text = token,
                 line = line_no,
-                character = char_no,
+                character = (char_no - len(token)),
             ))
             i += len(token)-1
             token = ''
