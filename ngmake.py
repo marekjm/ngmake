@@ -681,7 +681,7 @@ def consume(tokens, macros, global_variables, local_variables):
     else:
         value.append(resolve(each, global_variables, local_variables))
 
-    print((_evalueate_nest_level * '|  ') + 'consumeD-TO:', value)
+    print((_evalueate_nest_level * '|  ') + 'EVALUATED-TO:', value)
 
     _evalueate_nest_level -= 1
     return i, value
