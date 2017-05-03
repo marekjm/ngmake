@@ -438,19 +438,32 @@ def prepare_target(tokens):
     elements = parse_elements(header)
 
     target['target'] = elements[0]
-    target['dependencies'] = elements[1]
+    target['dependencies'] = (elements[1] if len(elements) > 1 else [])
 
     # skip '->'
     i += 1
 
     names = []
-    while i < limit and tokens[i] != '->':
-        names.append(tokens[i])
-        i += 1
+    if tokens[i] != '(':
+        macro_name = str(tokens[i])
+        selected_macro = macros.get(macro_name)
+        if selected_macro is None:
+            raise Exception(tokens[i], 'could not find matching macro: {}'.format(macro_name))
+        names = macros[macro_name][0]['parameters']
+        if len(names) != len(elements):
+            raise Exception(tokens[i], 'invalid number of parameters in macro: {}'.format(macro_name))
+        tokens = tokens[:i] + macros[macro_name][0]['body']
+        # unskip '->', reuse it as a parameters-from-body separator
+        i -= 1
+    else:
+        while i < limit and tokens[i] != '->':
+            names.append(tokens[i])
+            i += 1
 
-    # strip '(' and ')'
-    names = names[1:-1]
-    names = list(map(str, parse_elements(names)))
+        # strip '(' and ')'
+        names = names[1:-1]
+        names = list(map(str, parse_elements(names)))
+
     target['names'] = names
 
     variables = {}
@@ -458,8 +471,9 @@ def prepare_target(tokens):
     # set name
     variables[str(names[0])] = str(elements[0])[1:-1]
 
-    # set dependencies
-    variables[str(names[1])] = list(map(lambda each: str(each)[1:-1], elements[1]))
+    if len(names) > 1:
+        # set dependencies
+        variables[str(names[1])] = list(map(lambda each: str(each)[1:-1], target['dependencies']))
 
     for i, name in enumerate(names[2:]):
         variables[str(name)[1:-1]] = elements[i+2]
