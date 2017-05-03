@@ -44,6 +44,6 @@ do ('build/bin/vm/cpu', ['src/front/cpu.cpp', 'build/cpu.o',]) -> (name, deps) -
 let test = 'test' .
 do (test, []) -> (name, deps) ->
     'g++' name ,
-    echo ( 'Hello World!' ) /*,
-    echo ( name ) */
+    echo ( 'Hello World!' ) ,
+    echo ( name )
 .

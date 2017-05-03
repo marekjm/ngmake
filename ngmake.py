@@ -536,7 +536,8 @@ def parse_elements(tokens):
     while i < len(tokens):
         if tokens[i] == '[':
             balance = 1
-            subsequence = []
+            subsequence = [tokens[i]]
+            i += 1
 
             while i < limit and balance > 0:
                 subsequence.append(tokens[i])
@@ -749,7 +750,9 @@ def compile_body(target, source, global_variables, macros, local_variables = Non
         elif str(each) in macros:
             macro_name = str(each)
             i += 1
-            subsequence = []
+
+            subsequence = [tokens[i]]
+            i += 1
             balance = 1
             while i < limit and balance > 0:
                 subsequence.append(tokens[i])
@@ -760,7 +763,9 @@ def compile_body(target, source, global_variables, macros, local_variables = Non
                 i += 1
 
             # strip '(' and ')'
-            subsequence = parse_elements(subsequence[1:-1])
+            subsequence = subsequence[1:-1]
+            print(list(map(str, subsequence)))
+            subsequence = parse_elements(subsequence)
 
             macro_parameters = {}
             for j, p in enumerate(macros[macro_name]['parameters']):
@@ -785,8 +790,14 @@ if __name__ == '__main__':
         print(__doc__)
         exit(1)
 
+    flag_debugging = False
+    if sys.argv[1] == '--debug':
+        flag_debugging = True
+
+    source_file = sys.argv[1 + int(flag_debugging)]
+
     source_text = ''
-    with open(sys.argv[1]) as ifstream:
+    with open(source_file) as ifstream:
         source_text = ifstream.read()
 
 
@@ -806,18 +817,21 @@ if __name__ == '__main__':
     variables = dict({ each['name'] : each['value'] for each in map(prepare_variable, raw_variables) })
 
     compiled_targets = map(lambda each: compile(source = each, global_variables = variables, macros = macros), targets)
-    for i, each in enumerate(compiled_targets):
-        lines = []
-        line = []
-        each['body'].append('\n')
-        for part in each['body']:
-            line.append(part)
-            if part == '\n':
-                lines.append('\t' + ' '.join(map(str, line)))
-                line = []
-                continue
-        print('{target}: {dependencies}\n{body}'.format(
-            target = each['target'],
-            dependencies = ' '.join(map(str, map(despecialise, each['dependencies']))),
-            body = ''.join(lines),
-        ))
+    if flag_debugging:
+        list(compiled_targets)
+    else:
+        for i, each in enumerate(compiled_targets):
+            lines = []
+            line = []
+            each['body'].append('\n')
+            for part in each['body']:
+                line.append(part)
+                if part == '\n':
+                    lines.append('\t' + ' '.join(map(str, line)))
+                    line = []
+                    continue
+            print('{target}: {dependencies}\n{body}'.format(
+                target = each['target'],
+                dependencies = ' '.join(map(str, map(despecialise, each['dependencies']))),
+                body = ''.join(lines),
+            ))
