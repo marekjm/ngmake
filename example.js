@@ -58,7 +58,8 @@ macro compile ( output, ...deps ) ->
 .
 */
 macro compile ( name, ...all ) ->
-    cxx ...cxxoptions '-o' name ...all
+    cxx ...cxxoptions '-o' name ...all ,
+    'touch' name
 .
 
 do ('build/bin/vm/kernel', ['src/front/cpu.cpp', 'build/cpu.o']) -> (name, deps) ->
