@@ -27,3 +27,17 @@ do (test, []) -> (name, deps) ->
 do ('dafuq', ['foo', 'bar', 'bax', 'bay', 'baz',]) -> (name, deps) ->
     echo ( name, ...deps )
 .
+
+macro echo ( ...all ) ->
+    'echo' ...all
+.
+
+/*
+macro reverse ( first, ...rest ) ->
+    ... reverse( ...rest ), first
+.
+
+do ('foo', []) -> (name, deps) ->
+    echo(reverse( 'Hello', 'reversed', 'World' ))
+.
+*/
