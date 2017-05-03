@@ -652,8 +652,7 @@ def prepare_macro(tokens):
     # skip '->'
     i += 1
 
-    # without the final '.'
-    macro['body'] = tokens[i:-1]
+    macro['body'] = tokens[i:]
 
     return macro
 
@@ -723,6 +722,7 @@ def resolve(something, global_variables, local_variables):
 def compile_header(source, global_variables):
     target = {
         'variables': source['variables'],
+        'dependencies': source['dependencies'],
     }
 
     target['target'] = resolve(source['target'], global_variables, {})
@@ -730,9 +730,9 @@ def compile_header(source, global_variables):
 
     return target
 
-def compile_body(target, source, global_variables):
+def compile_body(target, source, global_variables, macros, local_variables = None):
     tokens = source['body'][:-1]  # without final '.'
-    local_variables = source['variables']
+    local_variables = source.get('variables', (local_variables or {}))
     body = []
 
     i = 0
@@ -740,9 +740,34 @@ def compile_body(target, source, global_variables):
 
     while i < limit:
         each = tokens[i]
+
         if each == '...':
             i += 1
             body.extend(resolve(tokens[i], global_variables, local_variables))
+        elif each == ',':
+            body.append('\n')
+        elif str(each) in macros:
+            macro_name = str(each)
+            i += 1
+            subsequence = []
+            balance = 1
+            while i < limit and balance > 0:
+                subsequence.append(tokens[i])
+                if tokens[i] == '(':
+                    balance += 1
+                if tokens[i] == ')':
+                    balance -= 1
+                i += 1
+
+            # strip '(' and ')'
+            subsequence = parse_elements(subsequence[1:-1])
+
+            macro_parameters = {}
+            for j, p in enumerate(macros[macro_name]['parameters']):
+                macro_parameters[p] = despecialise(subsequence[j])
+
+            compiled = compile_body({}, macros[macro_name], global_variables, macros, macro_parameters)
+            body.extend(compiled['body'])
         else:
             body.append(resolve(each, global_variables, local_variables))
         i += 1
@@ -750,9 +775,9 @@ def compile_body(target, source, global_variables):
     target['body'] = body
     return target
 
-def compile(source, global_variables):
+def compile(source, global_variables, macros):
     target = compile_header(source, global_variables)
-    target = compile_body(target, source, global_variables)
+    target = compile_body(target, source, global_variables, macros)
     return target
 
 if __name__ == '__main__':
@@ -774,12 +799,25 @@ if __name__ == '__main__':
     raw_variables = match_variables(tokens)
     raw_macros = match_macros(tokens)
 
-    macros = list(map(prepare_macro, raw_macros))
+    macros = dict({ each['name']: { 'parameters': each['parameters'], 'body': each['body'], } for each in map(prepare_macro, raw_macros) })
 
     targets = list(map(prepare_target, raw_targets))
 
     variables = dict({ each['name'] : each['value'] for each in map(prepare_variable, raw_variables) })
 
-    compiled_targets = map(lambda each: compile(source = each, global_variables = variables), targets)
+    compiled_targets = map(lambda each: compile(source = each, global_variables = variables, macros = macros), targets)
     for i, each in enumerate(compiled_targets):
-        print(i, each)
+        lines = []
+        line = []
+        each['body'].append('\n')
+        for part in each['body']:
+            line.append(part)
+            if part == '\n':
+                lines.append('\t' + ' '.join(map(str, line)))
+                line = []
+                continue
+        print('{target}: {dependencies}\n{body}'.format(
+            target = each['target'],
+            dependencies = ' '.join(map(str, map(despecialise, each['dependencies']))),
+            body = ''.join(lines),
+        ))
