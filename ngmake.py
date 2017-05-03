@@ -590,6 +590,25 @@ def compile_header(source, global_variables):
 
     return target
 
+def evaluate(tokens, global_variables, local_variables):
+    skip = 1
+    value = []
+
+    print('EVALUATE:', list(map(str, tokens)))
+
+    i = 0
+    limit = len(tokens)
+
+    each = tokens[i]
+    i += 1
+
+    if str(each) in macros:
+        pass
+    else:
+        value = [resolve(each, global_variables, local_variables)]
+
+    return skip, value
+
 def compile_body(target, source, global_variables, macros, local_variables = None):
     tokens = source['body'][:-1]  # without final '.'
     local_variables = source.get('variables', (local_variables or {}))
@@ -603,7 +622,10 @@ def compile_body(target, source, global_variables, macros, local_variables = Non
 
         if each == '...':
             i += 1
-            body.extend(resolve(tokens[i], global_variables, local_variables))
+            skip, value = evaluate(tokens[i:], global_variables, local_variables)
+            print(value)
+            body.extend(value[0])
+            i += skip
         elif each == ',':
             body.append('\n')
         elif str(each) in macros:
