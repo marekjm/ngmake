@@ -407,7 +407,7 @@ def parse_arguments_list(tokens, macros, global_variables, local_variables):
     parts = parse_expressions_list(tokens)
 
     for each in parts:
-        _, value = evaluate(each, macros, global_variables, local_variables)
+        _, value = consume(each, macros, global_variables, local_variables)
         arguments.extend(value)
 
     return arguments
@@ -609,7 +609,7 @@ def compile_header(source, global_variables):
     return target
 
 _evalueate_nest_level = -1
-def evaluate(tokens, macros, global_variables, local_variables):
+def consume(tokens, macros, global_variables, local_variables):
     value = []
 
     global _evalueate_nest_level
@@ -624,7 +624,7 @@ def evaluate(tokens, macros, global_variables, local_variables):
     i += 1
 
     if each == '...':
-        skip, subvalue = evaluate(tokens[i:], macros, global_variables, local_variables)
+        skip, subvalue = consume(tokens[i:], macros, global_variables, local_variables)
         i += skip
         value.extend(subvalue[0])
     elif str(each) in macros or (i < limit-1 and tokens[i] == '('):
@@ -681,7 +681,7 @@ def evaluate(tokens, macros, global_variables, local_variables):
     else:
         value.append(resolve(each, global_variables, local_variables))
 
-    print((_evalueate_nest_level * '|  ') + 'EVALUATED-TO:', value)
+    print((_evalueate_nest_level * '|  ') + 'consumeD-TO:', value)
 
     _evalueate_nest_level -= 1
     return i, value
@@ -701,13 +701,13 @@ def compile_body(target, source, global_variables, macros, local_variables = Non
 
         if each == '...':
             i += 1
-            skip, value = evaluate(tokens[i:], macros, global_variables, local_variables)
+            skip, value = consume(tokens[i:], macros, global_variables, local_variables)
             body.extend(value[0])
             i += skip - 1
         elif each == ',':
             body.append('\n')
         elif str(each) in macros:
-            skip, value = evaluate(tokens[i:], macros, global_variables, local_variables)
+            skip, value = consume(tokens[i:], macros, global_variables, local_variables)
             i += skip
             body.extend(value)
         else:
