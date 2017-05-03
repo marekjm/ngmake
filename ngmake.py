@@ -375,15 +375,12 @@ def parse_parameters_list(tokens):
 
     return elements
 
-def parse_arguments_list(tokens, macros, global_variables, local_variables):
-    arguments = []
+def parse_expressions_list(tokens):
+    expressions = []
 
     i = 0
     limit = len(tokens)
 
-    print('ARGUMENTS-LIST:', list(map(str, tokens)))
-
-    parts = []
     part = []
     balance = 0
     while i < limit:
@@ -393,15 +390,20 @@ def parse_arguments_list(tokens, macros, global_variables, local_variables):
         if tokens[i] in (')', ']',):
             balance -= 1
         if tokens[i] == ',' and balance == 0:
-            parts.append(part[:-1])  # push part without trailing ','
+            expressions.append(part[:-1])  # push part without trailing ','
             part = []
         i += 1
     if part:
-        parts.append(part)
+        expressions.append(part)
+
+    return expressions
+
+def parse_arguments_list(tokens, macros, global_variables, local_variables):
+    arguments = []
+
+    parts = parse_expressions_list(tokens)
 
     for each in parts:
-        print('  PART:', list(map(str, each)))
-
         _, value = evaluate(each, macros, global_variables, local_variables)
         arguments.extend(value)
 
@@ -610,7 +612,7 @@ def evaluate(tokens, macros, global_variables, local_variables):
     global _evalueate_nest_level
     _evalueate_nest_level += 1
 
-    print((_evalueate_nest_level * '|  ') + 'EVALUATE:', list(map(str, tokens)))
+    print((_evalueate_nest_level * '|  ') + 'EXPRESSION:  ', list(map(str, tokens)))
 
     i = 0
     limit = len(tokens)
@@ -750,7 +752,6 @@ if __name__ == '__main__':
         if selected_target is None:
             compiled_targets = map(lambda each: compile(source = each, global_variables = variables, macros = macros), targets)
         else:
-
             targets = filter(lambda each: str(each['target'])[1:-1] == selected_target, targets)
             compiled_targets = map(lambda each: compile(source = each, global_variables = variables, macros = macros), targets)
         if flag_debugging:

@@ -57,6 +57,7 @@ macro compile ( output, ...deps ) ->
     cxx ...cxxoptions '-o' output ...deps
 .
 */
+/*
 macro compile ( ...all ) ->
     cxx ...cxxoptions '-o' ...all
 .
@@ -64,3 +65,4 @@ macro compile ( ...all ) ->
 do ('build/bin/vm/kernel', ['src/front/cpu.cpp', 'build/cpu.o']) -> (name, deps) ->
     compile(name, ...deps)
 .
+*/
