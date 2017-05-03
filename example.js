@@ -34,22 +34,20 @@ macro nope () ->
     'Hello World!'
 .
 
-macro gather ( something ) ->
-    something
-; gather ( ...all ) ->
+macro gather ( ...all ) ->
     all
 .
 
-do ('what', ['foo', 'bar', 'bax']) -> (name, deps) ->
-    echo( ...gather( ...deps ) )
-.
-
-/*
 macro reverse ( first, ...rest ) ->
-    ... reverse( ...rest ), first
+    gather( ...reverse( ...rest ), first )
+; reverse ( only ) ->
+    gather( only )
 .
 
-do ('foo', []) -> (name, deps) ->
-    echo(reverse( 'Hello', 'reversed', 'World' ))
+do ('what', ['foo', 'bar', 'bax']) -> (name, deps) ->
+    echo( ...reverse( ...gather( name, ...deps ), name ) )
 .
-*/
+
+do ('heh', ['0', '1', '2', '3', '4']) -> (name, deps) ->
+    echo( ...reverse( ...deps, nope() ) )
+.

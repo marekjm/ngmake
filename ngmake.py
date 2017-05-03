@@ -381,20 +381,29 @@ def parse_arguments_list(tokens, macros, global_variables, local_variables):
     i = 0
     limit = len(tokens)
 
-    while i < len(tokens):
-        if tokens[i] == '...':
-            i += 1
-            skip, value = evaluate(tokens[i:], macros, global_variables, local_variables)
-            arguments.extend(value[0])
-            i += skip
-        else:
-            skip, value = evaluate(tokens[i:], macros, global_variables, local_variables)
-            arguments.extend(value)
-            i += skip
+    print('ARGUMENTS-LIST:', list(map(str, tokens)))
+
+    parts = []
+    part = []
+    balance = 0
+    while i < limit:
+        part.append(tokens[i])
+        if tokens[i] in ('(', '[',):
+            balance += 1
+        if tokens[i] in (')', ']',):
+            balance -= 1
+        if tokens[i] == ',' and balance == 0:
+            parts.append(part[:-1])  # push part without trailing ','
+            part = []
         i += 1
-        if i < limit and tokens[i] != ',':
-            raise InvalidSyntax(tokens[i], 'missing comma')
-        i += 1
+    if part:
+        parts.append(part)
+
+    for each in parts:
+        print('  PART:', list(map(str, each)))
+
+        _, value = evaluate(each, macros, global_variables, local_variables)
+        arguments.extend(value)
 
     return arguments
 
@@ -594,10 +603,14 @@ def compile_header(source, global_variables):
 
     return target
 
+_evalueate_nest_level = -1
 def evaluate(tokens, macros, global_variables, local_variables):
     value = []
 
-    print('EVALUATE:', list(map(str, tokens)))
+    global _evalueate_nest_level
+    _evalueate_nest_level += 1
+
+    print((_evalueate_nest_level * '|  ') + 'EVALUATE:', list(map(str, tokens)))
 
     i = 0
     limit = len(tokens)
@@ -605,7 +618,11 @@ def evaluate(tokens, macros, global_variables, local_variables):
     each = tokens[i]
     i += 1
 
-    if str(each) in macros:
+    if each == '...':
+        skip, subvalue = evaluate(tokens[i:], macros, global_variables, local_variables)
+        i += skip
+        value.extend(subvalue[0])
+    elif str(each) in macros or (i < limit-1 and tokens[i] == '('):
         macro_name = str(each)
 
         if tokens[i] != '(':
@@ -629,7 +646,7 @@ def evaluate(tokens, macros, global_variables, local_variables):
         subsequence = parse_arguments_list(subsequence, macros, global_variables, local_variables)
 
         selected_overload = None
-        for clause in macros[macro_name]:
+        for clause in macros.get(macro_name, []):
             parameters_length = len(clause['parameters'])
             mismatched_lengths = parameters_length != len(subsequence)
             last_parameter_packs = bool(parameters_length and str(clause['parameters'][-1]).startswith('...'))
@@ -642,7 +659,7 @@ def evaluate(tokens, macros, global_variables, local_variables):
             selected_overload = clause
             break
         if selected_overload is None:
-            raise Exception(each, 'could not find matching macro')
+            raise Exception(each, 'could not find matching macro: {}'.format(macro_name))
 
         macro_parameters = {}
         for j, param in enumerate(selected_overload['parameters']):
@@ -655,8 +672,11 @@ def evaluate(tokens, macros, global_variables, local_variables):
         compiled = compile_body({}, selected_overload, global_variables, macros, macro_parameters)
         value = compiled['body']
     else:
-        value = [resolve(each, global_variables, local_variables)]
+        value.append(resolve(each, global_variables, local_variables))
 
+    print((_evalueate_nest_level * '|  ') + 'EVALUATED-TO:', value)
+
+    _evalueate_nest_level -= 1
     return i, value
 
 def compile_body(target, source, global_variables, macros, local_variables = None):
