@@ -881,10 +881,21 @@ def consume(tokens, macros, global_variables, local_variables):
 
         compiled = compile_body({}, selected_overload, global_variables, macros, macro_parameters)
         value = compiled['body']
+    elif each == 'true':
+        value.append('true')
+    elif each == 'false':
+        value.append('false')
+    elif each == 'boolean':
+        skip, result = consume(tokens[i:], macros, global_variables, local_variables)
+        i += skip
+        if result and str(result[0]):
+            value.append('true')
+        else:
+            value.append('false')
     elif each == 'if':
         skip, value = consume(tokens[i:], macros, global_variables, local_variables)
         i += skip
-        if value and str(value[0]):
+        if value and str(value[0]) == 'true':
             while i < limit and tokens[i] != '->':
                 i += 1
             i += 1
@@ -938,11 +949,23 @@ def compile_body(target, source, global_variables, macros, local_variables = Non
             skip, value = consume(tokens[i:], macros, global_variables, local_variables)
             i += skip
             body.extend(value)
+        elif each == 'true':
+            body.append('true')
+        elif each == 'false':
+            body.append('false')
+        elif each == 'boolean':
+            i += 1
+            skip, value = consume(tokens[i:], macros, global_variables, local_variables)
+            i += skip - 1
+            if value and str(value[0]):
+                body.append('true')
+            else:
+                body.append('false')
         elif each == 'if':
             i += 1
             skip, value = consume(tokens[i:], macros, global_variables, local_variables)
             i += skip
-            if value and str(value[0]):
+            if value and str(value[0]) == 'true':
                 while i < limit and tokens[i] != '->':
                     i += 1
                 i += 1
