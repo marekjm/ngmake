@@ -292,7 +292,7 @@ class Token:
         self._character = character
 
     def __repr__(self):
-        return super().__repr__()
+        return 'Token ' + repr(str(self))
 
     def __str__(self):
         return self._text
