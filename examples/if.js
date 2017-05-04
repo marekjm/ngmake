@@ -18,6 +18,36 @@ macro filter ( first, ...rest ) ->
     gather( if boolean first -> first else null() )
 .
 
+macro list_to_boolean ( first, ...rest ) ->
+    true
+; list_to_boolean() ->
+    false
+.
+
+macro bool ( something ) -> if boolean something -> true else false .
+
+macro this ( something ) -> something .
+
+macro and ( lhs, rhs ) ->
+    if lhs -> this( boolean rhs ) else false
+.
+
+macro or ( lhs, rhs ) ->
+    if lhs -> true else this( boolean rhs )
+.
+
+macro all ( first, second, ...rest ) ->
+    all( and( first, second ), ...rest )
+; all ( first, second ) ->
+    and( first, second )
+; all ( only ) ->
+    boolean only
+.
+
+macro and ( lhs, rhs ) ->
+    if boolean lhs -> boolean rhs else false
+.
+
 do ('fancy', [ 'full', '', 'of', '', 'stuff', '']) -> (name, deps) ->
     boolean name,
     echo( boolean name ),
@@ -25,5 +55,8 @@ do ('fancy', [ 'full', '', 'of', '', 'stuff', '']) -> (name, deps) ->
     echo( deps ),
     echo( ...deps ),
     echo( filter( ...deps ) ),
-    echo( ...filter( ...deps ) )
+    echo( ...filter( ...deps ) ),
+    echo( list_to_boolean( ...deps ) ),
+    echo( 'all deps', all( ...deps ) ),
+    echo( 'all filtered deps', all( ...filter( ...deps ) ) ),
 .
