@@ -771,6 +771,24 @@ def compile_header(source, global_variables):
 
     return target
 
+def select_overload(macro_name, macros, arguments):
+    selected_overload = None
+    for clause in macros.get(macro_name, []):
+        parameters_length = len(clause['parameters'])
+        mismatched_lengths = parameters_length != len(arguments)
+        last_parameter_packs = bool(parameters_length and str(clause['parameters'][-1]).startswith('...'))
+        arguments_can_be_packed = ((len(arguments) >= parameters_length) and last_parameter_packs)
+        if len(arguments) == 0 and parameters_length == 1 and last_parameter_packs:
+            arguments_can_be_packed = True
+
+        if mismatched_lengths and not arguments_can_be_packed:
+            continue
+        selected_overload = clause
+        break
+    if selected_overload is None:
+        raise Exception(each, 'could not find matching macro: {}'.format(macro_name))
+    return selected_overload
+
 _evalueate_nest_level = -1
 def consume(tokens, macros, global_variables, local_variables):
     value = []
@@ -813,21 +831,7 @@ def consume(tokens, macros, global_variables, local_variables):
         subsequence = subsequence[1:-1]
         subsequence = parse_arguments_list(subsequence, macros, global_variables, local_variables)
 
-        selected_overload = None
-        for clause in macros.get(macro_name, []):
-            parameters_length = len(clause['parameters'])
-            mismatched_lengths = parameters_length != len(subsequence)
-            last_parameter_packs = bool(parameters_length and str(clause['parameters'][-1]).startswith('...'))
-            arguments_can_be_packed = ((len(subsequence) >= parameters_length) and last_parameter_packs)
-            if len(subsequence) == 0 and parameters_length == 1 and last_parameter_packs:
-                arguments_can_be_packed = True
-
-            if mismatched_lengths and not arguments_can_be_packed:
-                continue
-            selected_overload = clause
-            break
-        if selected_overload is None:
-            raise Exception(each, 'could not find matching macro: {}'.format(macro_name))
+        selected_overload = select_overload(macro_name, macros, subsequence)
 
         macro_parameters = {}
         for j, param in enumerate(selected_overload['parameters']):
