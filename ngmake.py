@@ -828,6 +828,8 @@ def consume(tokens, macros, global_variables, local_variables):
         value.extend(subvalue[0])
     elif str(each) in macros or (i < limit-1 and tokens[i] == '('):
         macro_name = str(each)
+        if macro_name not in macros:
+            macro_name = str(local_variables.get(macro_name, global_variables.get(macro_name)) or macro_name)
 
         if tokens[i] != '(':
             raise InvalidSyntax(tokens[i-1], 'missing opening parentheses')
@@ -891,7 +893,7 @@ def compile_body(target, source, global_variables, macros, local_variables = Non
             i += skip - 1
         elif each == ',':
             body.append('\n')
-        elif str(each) in macros:
+        elif str(each) in macros or (i+1 < limit and tokens[i+1] == '('):
             skip, value = consume(tokens[i:], macros, global_variables, local_variables)
             i += skip
             body.extend(value)
