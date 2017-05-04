@@ -36,12 +36,16 @@ macro or ( lhs, rhs ) ->
     if lhs -> true else this( boolean rhs )
 .
 
+macro not ( something ) ->
+    if boolean something -> false else true
+.
+
 macro all ( first, second, ...rest ) ->
     all( and( first, second ), ...rest )
-; all ( first, second ) ->
-    and( first, second )
 ; all ( only ) ->
     boolean only
+; all() ->
+    true
 .
 
 macro and ( lhs, rhs ) ->
@@ -59,4 +63,8 @@ do ('fancy', [ 'full', '', 'of', '', 'stuff', '']) -> (name, deps) ->
     echo( list_to_boolean( ...deps ) ),
     echo( 'all deps', all( ...deps ) ),
     echo( 'all filtered deps', all( ...filter( ...deps ) ) ),
+    echo( 'all', all() ),
+    echo( 'not true', not( true ) ),
+    echo( 'not false', not( false ) ),
+    echo( boolean false ),
 .
