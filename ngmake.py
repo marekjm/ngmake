@@ -776,7 +776,7 @@ def prepare_variable(tokens):
 def resolve(something, global_variables, local_variables, *other):
     value = None
     if something[0] in ('"', "'",):
-        value = str(something)[1:-1]
+        value = String(str(something)[1:-1])
     else:
         value = local_variables.get(str(something), global_variables.get(str(something)))
         for each in other:
@@ -888,7 +888,15 @@ def consume(tokens, macros, global_variables, local_variables):
     elif each == 'boolean':
         skip, result = consume(tokens[i:], macros, global_variables, local_variables)
         i += skip
-        if result and str(result[0]):
+        if result:
+            result = result[0]
+        else:
+            result = 'false'
+        if repr(result) == repr('true'):
+            value.append('true')
+        elif repr(result) == repr('false'):
+            value.append('false')
+        elif str(result):
             value.append('true')
         else:
             value.append('false')
@@ -955,12 +963,22 @@ def compile_body(target, source, global_variables, macros, local_variables = Non
             body.append('false')
         elif each == 'boolean':
             i += 1
-            skip, value = consume(tokens[i:], macros, global_variables, local_variables)
+            skip, result = consume(tokens[i:], macros, global_variables, local_variables)
             i += skip - 1
-            if value and str(value[0]):
-                body.append('true')
+            if result:
+                result = result[0]
             else:
-                body.append('false')
+                result = 'false'
+            value = None
+            if repr(result) == repr('true'):
+                value = 'true'
+            elif repr(result) == repr('false'):
+                value = 'false'
+            elif str(result):
+                value = 'true'
+            else:
+                value = 'false'
+            body.append(value)
         elif each == 'if':
             i += 1
             skip, value = consume(tokens[i:], macros, global_variables, local_variables)
