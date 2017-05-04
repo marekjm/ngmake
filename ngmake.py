@@ -212,6 +212,11 @@ CONCEPTS
 
             /* Ngmake */
             do ('build/bin/foo', [ 'src/foo.cpp' ])
+
+
+SEE ALSO
+
+    make(1)
 """
 
 import re
