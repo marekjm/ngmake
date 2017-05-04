@@ -784,9 +784,9 @@ def compile_header(source, global_variables):
 
     return target
 
-def select_overload(macro_name, macros, arguments):
+def select_clause(arguments, available_clauses):
     selected_overload = None
-    for clause in macros.get(macro_name, []):
+    for clause in available_clauses:
         parameters_length = len(clause['parameters'])
         mismatched_lengths = parameters_length != len(arguments)
         last_parameter_packs = bool(parameters_length and str(clause['parameters'][-1]).startswith('...'))
@@ -798,6 +798,13 @@ def select_overload(macro_name, macros, arguments):
             continue
         selected_overload = clause
         break
+    return selected_overload
+
+def select_overload(macro_name, macros, arguments):
+    available_clauses = macros.get(macro_name)
+    if available_clauses is None:
+        raise Exception('call to undefined macro: {}'.format(macro_name))
+    selected_overload = select_clause(arguments, available_clauses)
     if selected_overload is None:
         raise Exception('could not find matching macro: {}'.format(macro_name))
     return selected_overload
