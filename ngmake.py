@@ -835,7 +835,7 @@ def consume(tokens, macros, global_variables, local_variables):
         if macro_name not in macros:
             macro_name = str(local_variables.get(macro_name, global_variables.get(macro_name)) or macro_name)
 
-        if tokens[i] != '(':
+        if i == len(tokens) or tokens[i] != '(':
             raise InvalidSyntax(tokens[i-1], 'missing opening parentheses')
 
         subsequence = [tokens[i]]
