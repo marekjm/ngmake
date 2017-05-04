@@ -847,14 +847,12 @@ def consume(tokens, macros, global_variables, local_variables):
         subsequence = [tokens[i]]
         i += 1
         balance = 1
-        while i < limit:
+        while i < limit and balance > 0:
             subsequence.append(tokens[i])
             if tokens[i] == '(':
                 balance += 1
             if tokens[i] == ')':
                 balance -= 1
-            if balance <= 0:
-                break
             i += 1
 
         # strip '(' and ')'
@@ -922,87 +920,30 @@ def consume(tokens, macros, global_variables, local_variables):
 
     return i, value
 
-def compile_body(target, source, global_variables, macros, local_variables = None):
+def compile_body(target, source, global_variables, macros, local_variables):
     tokens = source['body'][:-1]  # without final '.'
-    local_variables = source.get('variables', (local_variables or {}))
     body = []
 
     i = 0
     limit = len(tokens)
 
     while i < limit:
-        each = tokens[i]
-
-        if each == '...':
-            i += 1
-            skip, value = consume(tokens[i:], macros, global_variables, local_variables)
-            body.extend(value[0])
-            i += skip - 1
-        elif each == ',':
-            body.append('\n')
-        elif i+1 < limit and tokens[i+1] == '(':
-            skip, value = consume(tokens[i:], macros, global_variables, local_variables)
-            i += skip
-            body.extend(value)
-        elif each == 'true':
-            body.append('true')
-        elif each == 'false':
-            body.append('false')
-        elif each == 'boolean':
-            i += 1
-            skip, result = consume(tokens[i:], macros, global_variables, local_variables)
-            i += skip - 1
-            if result:
-                result = result[0]
-            else:
-                result = 'false'
-            value = None
-            if repr(result) == repr('true'):
-                value = 'true'
-            elif repr(result) == repr('false'):
-                value = 'false'
-            elif str(result):
-                value = 'true'
-            else:
-                value = 'false'
-            body.append(value)
-        elif each == 'if':
-            i += 1
-            skip, value = consume(tokens[i:], macros, global_variables, local_variables)
-            i += skip
-            if value and str(value[0]) == 'true':
-                while i < limit and tokens[i] != '->':
-                    i += 1
-                i += 1
-                skip, value = consume(tokens[i:], macros, global_variables, local_variables)
-                i += skip
-                while i < limit and tokens[i] != 'else':
-                    i += 1
-                i += 1
-                skip, _ = consume(tokens[i:], macros, global_variables, local_variables)
-                i += skip
-            else:
-                while i < limit and tokens[i] != '->':
-                    i += 1
-                i += 1
-                skip, _ = consume(tokens[i:], macros, global_variables, local_variables)
-                i += skip
-                while i < limit and tokens[i] != 'else':
-                    i += 1
-                i += 1
-                skip, value = consume(tokens[i:], macros, global_variables, local_variables)
-                i += skip
-            body.extend(value)
+        skip = limit
+        value = []
+        if tokens[i] == ',':
+            value.append('\n')
+            skip = 1
         else:
-            body.append(resolve(each, global_variables, local_variables, dict({ k:k for k in macros })))
-        i += 1
+            skip, value = consume(tokens[i:], macros, global_variables, local_variables)
+        i += skip
+        body.extend(value)
 
     target['body'] = body
     return target
 
 def compile(source, global_variables, macros):
     target = compile_header(source, global_variables)
-    target = compile_body(target, source, global_variables, macros)
+    target = compile_body(target, source, global_variables, macros, source.get('variables', {}))
     return target
 
 if __name__ == '__main__':
