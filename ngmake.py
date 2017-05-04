@@ -799,7 +799,7 @@ def select_overload(macro_name, macros, arguments):
         selected_overload = clause
         break
     if selected_overload is None:
-        raise Exception(each, 'could not find matching macro: {}'.format(macro_name))
+        raise Exception('could not find matching macro: {}'.format(macro_name))
     return selected_overload
 
 _evalueate_nest_level = -1
