@@ -602,7 +602,7 @@ def prepare_target(tokens):
         if selected_macro is None:
             raise Exception(tokens[i], 'could not find matching macro: {}'.format(macro_name))
         names = macros[macro_name][0]['parameters']
-        if len(names) != len(elements):
+        if len(names) != len(elements) and (len(names) and not names[-1].startswith('...')):
             raise Exception(tokens[i], 'invalid number of parameters in macro: {}'.format(macro_name))
         tokens = tokens[:i] + macros[macro_name][0]['body']
         # unskip '->', reuse it as a parameters-from-body separator
@@ -620,12 +620,25 @@ def prepare_target(tokens):
 
     variables = {}
 
-    # set name
-    variables[str(names[0])] = str(elements[0])[1:-1]
+    def map_string(something):
+        return str(something)[1:-1]
 
-    if len(names) > 1:
-        # set dependencies
-        variables[str(names[1])] = list(map(lambda each: str(each)[1:-1], target['dependencies']))
+    def map_list(something):
+        return list(map(map_string, something))
+
+    def map_any_type(something):
+        if type(something) is Token:
+            return map_string(something)
+        elif type(something) is list:
+            return map_list(something)
+        else:
+            raise TypeError(something, 'cannot map this type')
+
+    for j, name in enumerate(names):
+        if name.startswith('...'):
+            variables[name[3:]] = list(map(map_any_type, elements[j:]))
+            break
+        variables[name] = map_any_type(elements[j])
 
     target['variables'] = variables
 
