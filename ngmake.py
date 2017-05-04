@@ -15,61 +15,203 @@ USAGE
 
 DESCRIPTION
 
-    Ngmake is a compiler to GNU Makefiles from a more sane language (a.k.a. "Yet another Makefile language").
-    Supported features include function (target), macro, and variable declarations.
-    Macros are small pieces of translation logic inlined inside functions.
-    For example, a function may be used to compile a final target but a macro is used to encapsulate the
-    generic logic actually used to perform required actions.
+    Ngmake is a compiler from a free-form functional language to GNU Makefiles.
+    It does not replicate any GNU Make logic.
+
+    The language is declarative, and does not support any conditional logic.
+    It operates on the assumption that all input is known at the compile time and
+    can be manipulated by following a fixed set of rules without the need to make any
+    decisions.
+
+    Produced Makefiles are not fit for human consumption or manipulation.
+    All variables are expanded by Ngmake so overriding variables like 'make CXX=g++ all' will
+    not work.
+    GNU Make is used by Ngmake *only* as a dependency solver; everything else happens on the Ngmake
+    side.
 
 
-NGMAKEFILE SYNTAX
+CONCEPTS
 
-    Functions
+    A brief explanation of Ngmake syntax, with some additional information.
+    Ngmake files consist of variable, target, and macro definitions.
 
-            ('build/target', ['src/dependency0.c', 'src/dependency1.c']) -> (target, dependencies)
-                'rm' '-f' target,
-                'g++' '-o' target dependencies
+    VARIABLES
+
+            let <name> = <value> .
+
+        Variables are immutable; once defined they cannot change.
+        The only rebindable variables are macro parameters - they can be bound to a new value when
+        a macro is recursively expanded.
+
+        Variables may hold strings, lists, and tuples.
+
+            let cxx = 'g++' .
+            let cxxoptions = [ '-Wall', '-Wextra', '-Werror' ] .
+            let compilers = ( 'g++', 'clang++', ) .
+
+        Sidenote: there is currently no distinction between lists and tuples.
+
+    EXPRESSIONS
+
+        An expression is either a macro expansion, or a seqence of terminals.
+        A terminal is either a literal string, or a variable.
+
+            /* sequence of two terminals; a single expression */
+            'echo' message
+
+            /* two macro expansions; two expressions */
+            echo(message), stderr(message)
+
+    MACROS
+
+            macro <name> ( <parameters>... ) -> <body> .
+
+        A body is one or more expressions separated by commas.
+
+        Macros are used to abstract and encapsulate a detail of compilation process.
+        Macros may contain a single step (e.g. "compile a file"), or many steps.
+
+            macro compile ( target, source ) ->
+                cxx cxxoptions '-o' target source
             .
 
-        Functions are used to encode steps required to make a target.
-        They can contain arbitrary number of steps, separated by commas.
-        A function definition ends with a period character.
+            macro remove ( target ) ->
+                'rm' '-f' target
+            .
 
-    Macros
-
-            remove(target) 'rm' '-f' target .
-            compile(target, dependencies) 'g++' '-o' target dependencies .
-
-            ('build/target', ['src/dependency0.c', 'src/dependency1.c']) -> (target, dependencies)
+            macro recompile ( target, source ) ->
                 remove(target),
-                compile(target, dependencies)
+                compile(target, source)
             .
 
-        Macros are smaller containers for making steps.
-        They can be called inside functions.
-        A call to a macro inlines it.
+    MACRO CLAUSES
 
-    Variables
+            macro <name> ( <parameters-0> ) -> <body-0> ;
+                  <name> ( <parameters-1> ) -> <body-1> ;
+                  <name> ( <parameters-N> ) -> <body-N> .
 
-            compiler = 'g++'.
+        Ngmake decides which macro should be used in an expansion based on the name of the macro, and
+        then tries to find a clause for which structures of parameter tuple in macro header and
+        structure of argument list tuple match.
 
-            remove(target) 'rm' '-f' target .
-            compile(target, dependencies) compiler '-o' target dependencies .
+        For example, given this macro definition:
 
-            ('build/target', ['src/dependency0.c', 'src/dependency1.c']) -> (target, dependencies)
-                remove(target),
-                compile(target, dependencies)
+            macro compile ( source ) -> /* clause 0. */
+                    cxx source ;
+                  compile ( target, source ) -> /* clause 1. */
+                    cxx '-o' target source .
+
+        the expansions will match as follows:
+
+            /* matches clause 0. */
+            compile( 'foo.cpp' )
+
+            /* matches clause 1. */
+            compile( 'build/bin/foo', 'foo.cpp' )
+
+            /* no match */
+            compile( 'build/bin/bar', 'bar.cpp', 'build/lib/baz.o' )
+
+        This is a very primitive form of pattern matching on macro arity.
+
+    VARIADIC MACROS, LISTS, AND THE '...' (TRIPLE DOT) OPERATOR
+
+            macro <name> ( <parameter-0>, <parameter-N>, ...<parameter-V>) -> <body> .
+            macro <name> ( ...<parameter-V>) -> <body> .
+
+        Last parameter of a macro may be "variadic" meaning it can match an unspecified number of
+        arguments, and gather them into a single list.
+        For example, given this macro definition:
+
+            macro compile ( source ) -> /* clause 0. */
+                    cxx source ;
+                  compile ( target, source ) -> /* clause 1. */
+                    cxx '-o' target source .
+                  compile ( target, source, ...deps ) -> /* clause 2. */
+                    cxx '-o' target source ...deps .
+
+        the expansions will match as follows:
+
+            /* matches clause 0. */
+            compile( 'foo.cpp' )
+
+            /* matches clause 1. */
+            compile( 'build/bin/foo', 'foo.cpp' )
+
+            /*
+                matches clause 2. with:
+
+                target = 'build/bin/bar'
+                source = 'bar.cpp'
+                deps = [ 'build/lib/baz.o' ]
+            */
+            compile( 'build/bin/bar', 'bar.cpp', 'build/lib/baz.o' )
+
+        Using '...' operator in macro's body spreads it into individual elements of the list (or tuple).
+        For example, given this macro definition:
+
+            macro echo ( ...all ) -> 'echo' ...all .
+
+        the expansion will work as follows:
+
+            /* step 1. */
+            echo( 'Hello', 'beautiful', 'World' )
+
+            /* step 2. */
+            echo ( ...all ) with all = [ 'Hello', 'beautiful', 'World' ]
+
+            /* step 3. */
+            'echo' ...[ 'Hello', 'beautiful', 'World' ]
+
+            /* step 4. */
+            'echo' 'Hello', 'beautiful', 'World'
+
+    MACRO EXPANSION
+
+        Macros are expanded in-place where they are called.
+        For example, given these definitions:
+
+            macro echo ( message ) -> 'echo' message .
+            macro greeting() -> 'Hello World!' .
+
+        this expression:
+
+            echo( greeting() )
+
+        will be expanded to:
+
+            /* step 1. */
+            echo( greeting() )
+
+            /* step 2. */
+            echo( 'Hello World!' )
+
+            /* step 3. */
+            'echo' 'Hello World!'
+
+    TARGETS
+
+            /* canonical version */
+            do ( <target>, <dependencies> ) -> ( <bound-name-for-target>, <bound-name-for-deps> ) ->
+                <body>
             .
 
-        Variables are used to hold values used during making process.
-        Variables can be shadowed by parameters of the same name passed to macro or a function:
+            /* version with macro implementation */
+            do ( <target>, <dependencies> ) -> <name-of-a-macro> .
 
-            ('build/target', ['src/dependency0.c', 'src/dependency1.c'], 'clang++') -> (target, dependencies, compiler)
-                remove(target),
-                compile(target, dependencies)
-            .
+        Targets can be implemented directly, or by a macro.
+        The "implemented by macro" is way to reuse code and avoid writing the same expressions many times.
+        Implementing macro must have two parameters.
 
-        Once shadowed, old value of a variable cannot be obtained.
+        In target definition the '<target>' part is a string with the name of the target, and
+        '<dependencies>' is a list of strings with names of the dependencies of the target.
+        These two specifications are equivallent:
+
+            # GNU Make
+            build/bin/foo: src/foo.cpp
+
+            /* Ngmake */
+            do ('build/bin/foo', [ 'src/foo.cpp' ])
 """
 
 import re
