@@ -39,11 +39,14 @@ macro compile ( name, ...all ) ->
     'touch' name
 .
 
+macro call ( c, ...args ) -> c( ...args ) .
+
 let c = compile .
 
 do ('build/bin/vm/kernel', ['src/front/cpu.cpp', 'build/cpu.o']) -> (name, deps) ->
     compile(name, ...deps),
-    c(name, ...deps)
+    c(name, ...deps),
+    call(compile, name, ...deps)
 .
 
 macro compiled_target (name) ->
