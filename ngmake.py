@@ -806,6 +806,8 @@ def select_overload(macro_name, macros, arguments):
     available_clauses = macros.get(macro_name)
     if available_clauses is None:
         raise Exception('call to undefined macro: {}'.format(macro_name))
+    if callable(available_clauses):
+        return available_clauses
     selected_overload = select_clause(arguments, available_clauses)
     if selected_overload is None:
         raise Exception('could not find matching macro: {}'.format(macro_name))
@@ -847,17 +849,19 @@ def consume(tokens, macros, global_variables, local_variables):
         subsequence = parse_arguments_list(subsequence, macros, global_variables, local_variables)
 
         selected_overload = select_overload(macro_name, macros, subsequence)
+        if callable(selected_overload):
+            value = selected_overload(*subsequence)
+        else:
+            macro_parameters = {}
+            for j, param in enumerate(selected_overload['parameters']):
+                if param.startswith('...'):
+                    param = param[3:]
+                    macro_parameters[param] = subsequence[j:]
+                else:
+                    macro_parameters[param] = subsequence[j]
 
-        macro_parameters = {}
-        for j, param in enumerate(selected_overload['parameters']):
-            if param.startswith('...'):
-                param = param[3:]
-                macro_parameters[param] = subsequence[j:]
-            else:
-                macro_parameters[param] = subsequence[j]
-
-        compiled = compile_body({}, selected_overload, global_variables, macros, macro_parameters)
-        value = compiled['body']
+            compiled = compile_body({}, selected_overload, global_variables, macros, macro_parameters)
+            value = compiled['body']
     elif each == 'true':
         value.append('true')
     elif each == 'false':
