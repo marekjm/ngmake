@@ -415,8 +415,7 @@ def reduce_arrow_operator(tokens):
 def reduce_spread_operator(tokens):
     reduced_tokens = []
 
-    i = 0
-    limit = len(tokens)
+    i, limit = 0, len(tokens)
 
     while i < limit:
         if i < limit-3 and tokens[i] == '.' and tokens[i+1] == '.' and tokens[i+2] == '.':
@@ -459,8 +458,7 @@ class Atom(NgmakeType):
 def _match_group_from_to_dot(from_token):
     matches = []
 
-    i = 0
-    limit = len(tokens)
+    i, limit = 0, len(tokens)
 
     while i < limit:
         if tokens[i] == from_token:
@@ -490,8 +488,7 @@ def match_macros(tokens):
 def parse_elements(tokens):
     elements = []
 
-    i = 0
-    limit = len(tokens)
+    i, limit = 0, len(tokens)
 
     while i < len(tokens):
         if tokens[i] == '[':
@@ -526,8 +523,7 @@ def parse_elements(tokens):
 def parse_parameters_list(tokens):
     elements = []
 
-    i = 0
-    limit = len(tokens)
+    i, limit = 0, len(tokens)
 
     while i < len(tokens):
         if tokens[i] == '...':
@@ -545,8 +541,7 @@ def parse_parameters_list(tokens):
 def parse_expressions_list(tokens):
     expressions = []
 
-    i = 0
-    limit = len(tokens)
+    i, limit = 0, len(tokens)
 
     part = []
     balance = 0
@@ -584,8 +579,7 @@ def prepare_target(tokens):
         'body': [],
     }
 
-    i = 0
-    limit = len(tokens)
+    i, limit = 0, len(tokens)
 
     # skip 'do'
     i += 1
@@ -662,8 +656,7 @@ def prepare_target(tokens):
 def prepare_macro_clause(tokens):
     macro = {}
 
-    i = 0
-    limit = len(tokens)
+    i, limit = 0, len(tokens)
 
     # skip name
     i += 1
@@ -689,8 +682,7 @@ def split_macro_overloads(tokens):
     overloads = []
 
     clause = []
-    i = 0
-    limit = len(tokens)
+    i, limit = 0, len(tokens)
 
     while i < limit:
         clause.append(tokens[i])
@@ -707,8 +699,7 @@ def prepare_macro(tokens):
         'overloads': [],
     }
 
-    i = 0
-    limit = len(tokens)
+    i, limit = 0, len(tokens)
 
     # strip 'macro'
     i += 1
@@ -740,8 +731,7 @@ def prepare_variable(tokens):
         'value': None,
     }
 
-    i = 0
-    limit = len(tokens)
+    i, limit = 0, len(tokens)
 
     # skip 'let'
     i += 1
@@ -826,8 +816,7 @@ def select_overload(macro_name, macros, arguments):
 def consume(tokens, macros, global_variables, local_variables):
     value = []
 
-    i = 0
-    limit = len(tokens)
+    i, limit = 0, len(tokens)
 
     each = tokens[i]
     i += 1
@@ -924,8 +913,7 @@ def compile_body(target, source, global_variables, macros, local_variables):
     tokens = source['body'][:-1]  # without final '.'
     body = []
 
-    i = 0
-    limit = len(tokens)
+    i, limit = 0, len(tokens)
 
     while i < limit:
         skip = limit
