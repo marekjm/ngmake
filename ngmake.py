@@ -598,13 +598,11 @@ def prepare_target(tokens):
     names = []
     if tokens[i] != '(':
         macro_name = str(tokens[i])
-        selected_macro = macros.get(macro_name)
-        if selected_macro is None:
-            raise Exception(tokens[i], 'could not find matching macro: {}'.format(macro_name))
-        names = macros[macro_name][0]['parameters']
+        selected_overload = select_overload(macro_name, macros, elements)
+        names = selected_overload['parameters']
         if len(names) != len(elements) and (len(names) and not names[-1].startswith('...')):
             raise Exception(tokens[i], 'invalid number of parameters in macro: {}'.format(macro_name))
-        tokens = tokens[:i] + macros[macro_name][0]['body']
+        tokens = tokens[:i] + selected_overload['body']
         # unskip '->', reuse it as a parameters-from-body separator
         i -= 1
     else:

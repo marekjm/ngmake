@@ -47,11 +47,10 @@ do ('build/bin/vm/kernel', ['src/front/cpu.cpp', 'build/cpu.o']) -> (name, deps)
 macro compiled_target (name) ->
     echo( name ),
     echo( name )
-    /*
+; compiled_target ( name, deps ) ->
     compile(name, ...deps),
     compile(name, ...deps)
-    */
 .
 
-/* do ('build/bin/vm/dis', ['src/front/dis.cpp']) -> compiled_target . */
+do ('build/bin/vm/dis', ['src/front/dis.cpp']) -> compiled_target .
 do ('build/bin/vm/dis') -> compiled_target .
