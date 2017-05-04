@@ -202,6 +202,23 @@ CONCEPTS
         Targets can be implemented directly, or by a macro.
         The "implemented by macro" is way to reuse code and avoid writing the same expressions many times.
         Implementing macro must have two parameters.
+        Example:
+
+            macro head ( first, ...rest ) -> first .
+            macro tail ( first, ...rest ) -> rest .
+
+            macro compile ( target, source, dependencies ) ->
+                cxx '-o' target source ...dependencies
+            .
+
+            macro compiled ( name, deps ) ->
+                compile( name, head(...deps), tail(...deps) )
+            .
+
+            do ('build/bin/foo', [ 'src/foo.cpp' ]) -> (name, deps) ->
+                compile( name, head(...deps), tail(...deps) )
+            .
+            do ('build/bin/bar', [ 'src/bar.cpp' ]) -> compiled .
 
         In target definition the '<target>' part is a string with the name of the target, and
         '<dependencies>' is a list of strings with names of the dependencies of the target.
