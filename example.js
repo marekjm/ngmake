@@ -52,5 +52,9 @@ macro compiled_target (name) ->
     compile(name, ...deps)
 .
 
+macro null ( ...all ) -> .
+
+do ('.PHONY', [ 'build/bin/vm/cpu' ]) -> null .
+
 do ('build/bin/vm/dis', ['src/front/dis.cpp']) -> compiled_target .
 do ('build/bin/vm/dis') -> compiled_target .
