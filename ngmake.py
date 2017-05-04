@@ -965,6 +965,11 @@ if __name__ == '__main__':
 
         macros = dict({ each['name']: each['overloads'] for each in map(prepare_macro, raw_macros) })
 
+        def std_match_regex(s, pat):
+            result = [('true' if re.compile(str(pat)).match(str(s)) else 'false')]
+            return result
+        macros['match'] = std_match_regex
+
         targets = list(map(prepare_target, raw_targets))
 
         variables = dict({ each['name'] : each['value'] for each in map(prepare_variable, raw_variables) })
