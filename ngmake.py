@@ -15,13 +15,11 @@ USAGE
 
 DESCRIPTION
 
-    Ngmake is a compiler from a free-form functional language to GNU Makefiles.
+    Ngmake is a compiler from a free-form, declarative, functional language to GNU Makefiles.
     It does not replicate any GNU Make logic.
 
-    The language is declarative, and does not support any conditional logic.
-    It operates on the assumption that all input is known at the compile time and
-    can be manipulated by following a fixed set of rules without the need to make any
-    decisions.
+    The language operates on the assumption that all input is known at the compile time, and
+    no new input appears at runtime.
 
     Produced Makefiles are not fit for human consumption or manipulation.
     All variables are expanded by Ngmake so overriding variables like 'make CXX=g++ all' will
@@ -230,6 +228,20 @@ CONCEPTS
             /* Ngmake */
             do ('build/bin/foo', [ 'src/foo.cpp' ])
 
+    IF
+
+            if <condition> -> <expression-if-true> else <expression-if-false>
+
+        Expands to '<expression-if-true>' when expression '<condition>' is true,
+        expands to '<expression-if-false>' otherwise.
+
+        Both true and false branch *MUST* contain a valid expression.
+        Should any of them evaluate to nothing (meaning that only the other branch should be taken) the
+        "null macro" can be used.
+
+            macro null () -> .
+
+            macro foo ( something ) -> if something -> echo( something ) else null() .
 
 AUTHOR
 
@@ -869,6 +881,31 @@ def consume(tokens, macros, global_variables, local_variables):
 
         compiled = compile_body({}, selected_overload, global_variables, macros, macro_parameters)
         value = compiled['body']
+    elif each == 'if':
+        skip, value = consume(tokens[i:], macros, global_variables, local_variables)
+        i += skip
+        if value and str(value[0]):
+            while i < limit and tokens[i] != '->':
+                i += 1
+            i += 1
+            skip, value = consume(tokens[i:], macros, global_variables, local_variables)
+            i += skip
+            while i < limit and tokens[i] != 'else':
+                i += 1
+            i += 1
+            skip, _ = consume(tokens[i:], macros, global_variables, local_variables)
+            i += skip
+        else:
+            while i < limit and tokens[i] != '->':
+                i += 1
+            i += 1
+            skip, _ = consume(tokens[i:], macros, global_variables, local_variables)
+            i += skip
+            while i < limit and tokens[i] != 'else':
+                i += 1
+            i += 1
+            skip, value = consume(tokens[i:], macros, global_variables, local_variables)
+            i += skip
     else:
         value.append(resolve(each, global_variables, local_variables, dict({ k:k for k in macros })))
 
@@ -900,6 +937,33 @@ def compile_body(target, source, global_variables, macros, local_variables = Non
         elif i+1 < limit and tokens[i+1] == '(':
             skip, value = consume(tokens[i:], macros, global_variables, local_variables)
             i += skip
+            body.extend(value)
+        elif each == 'if':
+            i += 1
+            skip, value = consume(tokens[i:], macros, global_variables, local_variables)
+            i += skip
+            if value and str(value[0]):
+                while i < limit and tokens[i] != '->':
+                    i += 1
+                i += 1
+                skip, value = consume(tokens[i:], macros, global_variables, local_variables)
+                i += skip
+                while i < limit and tokens[i] != 'else':
+                    i += 1
+                i += 1
+                skip, _ = consume(tokens[i:], macros, global_variables, local_variables)
+                i += skip
+            else:
+                while i < limit and tokens[i] != '->':
+                    i += 1
+                i += 1
+                skip, _ = consume(tokens[i:], macros, global_variables, local_variables)
+                i += skip
+                while i < limit and tokens[i] != 'else':
+                    i += 1
+                i += 1
+                skip, value = consume(tokens[i:], macros, global_variables, local_variables)
+                i += skip
             body.extend(value)
         else:
             body.append(resolve(each, global_variables, local_variables, dict({ k:k for k in macros })))
