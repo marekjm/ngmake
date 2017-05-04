@@ -205,7 +205,7 @@ CONCEPTS
 
         In target definition the '<target>' part is a string with the name of the target, and
         '<dependencies>' is a list of strings with names of the dependencies of the target.
-        These two specifications are equivallent:
+        These two specifications are equivalent:
 
             # GNU Make
             build/bin/foo: src/foo.cpp
