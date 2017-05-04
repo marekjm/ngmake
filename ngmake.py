@@ -284,16 +284,14 @@ class InvalidSyntax(Exception):
 def extract(source):
     quote = source[0]
     i = 1
-    backs = 0
+    backs = False
     while i < len(source):
-        if source[i] == quote and backs == 0:
+        if source[i] == quote and not backs:
             break
-        if source[i] == quote and backs != 0:
-            backs = 0
-            i += 1
-            continue
+        if backs and source[i] != '\\':
+            backs = False
         if source[i] == '\\':
-            backs += 1
+            backs = not backs
         i += 1
     return source[:i+1]
 
