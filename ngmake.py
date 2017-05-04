@@ -870,7 +870,7 @@ def consume(tokens, macros, global_variables, local_variables):
         compiled = compile_body({}, selected_overload, global_variables, macros, macro_parameters)
         value = compiled['body']
     else:
-        value.append(resolve(each, global_variables, local_variables))
+        value.append(resolve(each, global_variables, local_variables, dict({ k:k for k in macros })))
 
     # print((_evalueate_nest_level * '|  ') + 'EVALUATED-TO:', value)
 
@@ -902,7 +902,7 @@ def compile_body(target, source, global_variables, macros, local_variables = Non
             i += skip
             body.extend(value)
         else:
-            body.append(resolve(each, global_variables, local_variables))
+            body.append(resolve(each, global_variables, local_variables, dict({ k:k for k in macros })))
         i += 1
 
         # print('BODY:', body)
