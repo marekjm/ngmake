@@ -804,7 +804,7 @@ def select_clause(arguments, available_clauses):
         parameters_length = len(clause['parameters'])
         mismatched_lengths = parameters_length != len(arguments)
         last_parameter_packs = bool(parameters_length and str(clause['parameters'][-1]).startswith('...'))
-        arguments_can_be_packed = ((len(arguments) >= parameters_length) and last_parameter_packs)
+        arguments_can_be_packed = ((len(arguments) >= (parameters_length-1)) and last_parameter_packs)
         if len(arguments) == 0 and parameters_length == 1 and last_parameter_packs:
             arguments_can_be_packed = True
 

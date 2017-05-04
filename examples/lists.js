@@ -2,10 +2,10 @@
 macro gather ( ...all ) -> all .
 
 /* Reverse parameters. */
-macro reverse ( first, ...rest ) ->
-    gather( ...reverse( ...rest ), first )
-; reverse ( only ) ->
+macro reverse ( only ) ->
     gather( only )
+; reverse ( first, ...rest ) ->
+    gather( ...reverse( ...rest ), first )
 .
 
 /* Return head or tail of a list. */

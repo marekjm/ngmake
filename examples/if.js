@@ -12,10 +12,10 @@ macro gather ( ...all ) -> all .
 
 macro null ( ...all ) -> .
 
-macro filter ( first, ...rest ) ->
-    gather( if boolean first -> first else null(), ...filter( ...rest ) )
-; filter ( first ) ->
+macro filter ( first ) ->
     gather( if boolean first -> first else null() )
+; filter ( first, ...rest ) ->
+    gather( if boolean first -> first else null(), ...filter( ...rest ) )
 .
 
 macro list_to_boolean ( first, ...rest ) ->

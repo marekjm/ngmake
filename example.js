@@ -20,10 +20,10 @@ macro gather ( ...all ) ->
     all
 .
 
-macro reverse ( first, ...rest ) ->
-    gather( ...reverse( ...rest ), first )
-; reverse ( only ) ->
+macro reverse ( only ) ->
     gather( only )
+; reverse ( first, ...rest ) ->
+    gather( ...reverse( ...rest ), first )
 .
 
 do ('what', ['foo', 'bar', 'bax']) -> (name, deps) ->
