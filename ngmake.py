@@ -761,12 +761,16 @@ def prepare_variable(tokens):
 
     return variable
 
-def resolve(something, global_variables, local_variables):
+def resolve(something, global_variables, local_variables, *other):
     value = None
     if something[0] in ('"', "'",):
         value = str(something)[1:-1]
     else:
         value = local_variables.get(str(something), global_variables.get(str(something)))
+        for each in other:
+            if value is not None:
+                break
+            value = each.get(str(something))
     if value is None:
         raise Exception(something, 'undefined variable: {}'.format(repr(str(something))))
     return value
