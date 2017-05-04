@@ -823,14 +823,8 @@ def select_overload(macro_name, macros, arguments):
         raise Exception('could not find matching macro: {}'.format(macro_name))
     return selected_overload
 
-_evalueate_nest_level = -1
 def consume(tokens, macros, global_variables, local_variables):
     value = []
-
-    global _evalueate_nest_level
-    _evalueate_nest_level += 1
-
-    # print((_evalueate_nest_level * '|  ') + 'EXPRESSION:  ', list(map(str, tokens)))
 
     i = 0
     limit = len(tokens)
@@ -876,8 +870,6 @@ def consume(tokens, macros, global_variables, local_variables):
                 macro_parameters[param] = subsequence[j:]
             else:
                 macro_parameters[param] = subsequence[j]
-
-        # print((_evalueate_nest_level * '|  ') + 'COMPILING-MACRO:', macro_name)
 
         compiled = compile_body({}, selected_overload, global_variables, macros, macro_parameters)
         value = compiled['body']
@@ -928,9 +920,6 @@ def consume(tokens, macros, global_variables, local_variables):
     else:
         value.append(resolve(each, global_variables, local_variables, dict({ k:k for k in macros })))
 
-    # print((_evalueate_nest_level * '|  ') + 'EVALUATED-TO:', value)
-
-    _evalueate_nest_level -= 1
     return i, value
 
 def compile_body(target, source, global_variables, macros, local_variables = None):
@@ -943,8 +932,6 @@ def compile_body(target, source, global_variables, macros, local_variables = Non
 
     while i < limit:
         each = tokens[i]
-
-        # print('EACH:', str(each))
 
         if each == '...':
             i += 1
@@ -1009,9 +996,6 @@ def compile_body(target, source, global_variables, macros, local_variables = Non
         else:
             body.append(resolve(each, global_variables, local_variables, dict({ k:k for k in macros })))
         i += 1
-
-        # print('BODY:', body)
-        # print('TOKENS-LEFT:', list(map(str, tokens[i:])))
 
     target['body'] = body
     return target
