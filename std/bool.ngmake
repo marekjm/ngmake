@@ -1,0 +1,17 @@
+import 'std::util'.
+
+macro bool ( something ) -> if boolean something -> true else false .
+
+macro and ( lhs, rhs ) ->
+    if lhs -> this( boolean rhs ) else false
+.
+
+macro or ( lhs, rhs ) ->
+    if lhs -> true else this( boolean rhs )
+.
+
+macro not ( something ) ->
+    if boolean something -> false else true
+.
+
+/* vim: set ft=javascript: */

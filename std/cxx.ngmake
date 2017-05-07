@@ -1,0 +1,18 @@
+import 'std::util'.
+import 'std::list'.
+
+macro without_headers ( first, ...rest ) ->
+    gather( if match( first, '.*\.h$' ) -> null() else first, ...without_headers( ...rest ) )
+; without_headers () ->
+    gather()
+.
+
+macro compile ( target, source, ...deps ) ->
+    cxx ...cxxflags '-o' target source ...deps
+.
+
+macro default_cxx_target ( name, deps ) ->
+    compile( name, ...without_headers( ...deps ) )
+.
+
+/* vim: set ft=javascript: */

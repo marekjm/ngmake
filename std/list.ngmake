@@ -12,4 +12,22 @@ macro reverse ( only ) ->
 macro head ( first, ...rest ) -> first .
 macro tail ( first, ...rest ) -> rest .
 
+/* Check if all elements of a list satisfy a predicate. */
+macro all ( pred, first, second, ...rest ) ->
+    all( pred, and( first, second ), ...rest )
+; all ( pred, only ) ->
+    pred( only )
+; all( pred ) ->
+    true
+; all() ->
+    true
+.
+
+/* Filtr */
+macro filter ( pred, first ) ->
+    gather( if pred( first ) -> first else null() )
+; filter ( pred, first, ...rest ) ->
+    gather( if pred( first ) -> first else null(), ...filter( pred, ...rest ) )
+.
+
 /* vim: set ft=javascript: */

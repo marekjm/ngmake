@@ -4,4 +4,6 @@ macro null ( ...all ) -> .
 
 macro call ( c, ...args ) -> c( ...args ) .
 
+macro this ( something ) -> something .
+
 /* vim: set ft=javascript: */
