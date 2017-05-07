@@ -453,7 +453,7 @@ class Atom(NgmakeType):
         self._value = something
 
 
-def _match_group_from_to_dot(from_token):
+def _match_group_from_to_dot(from_token, tokens):
     matches = []
 
     i, limit = 0, len(tokens)
@@ -474,13 +474,49 @@ def _match_group_from_to_dot(from_token):
     return matches
 
 def match_targets(tokens):
-    return _match_group_from_to_dot('do')
+    return _match_group_from_to_dot('do', tokens)
 
 def match_variables(tokens):
-    return _match_group_from_to_dot('let')
+    return _match_group_from_to_dot('let', tokens)
 
 def match_macros(tokens):
-    return _match_group_from_to_dot('macro')
+    return _match_group_from_to_dot('macro', tokens)
+
+def match_imports(tokens):
+    return _match_group_from_to_dot('import', tokens)
+
+
+def run_imports(to_import, macros, already_imported):
+    for each in to_import:
+        if each in already_imported:
+            continue
+        imported_macros, nested_imports = import_module(each, already_imported)
+        macros.update(imported_macros)
+        already_imported += nested_imports
+    return macros, already_imported
+
+def import_module(name, already_imported = ()):
+    source_text = ''
+    with open(name) as ifstream:
+        source_text = ifstream.read()
+
+    raw_tokens = generic_lexer(source_text)
+
+    tokens = reduce_arrow_operator(raw_tokens)
+    tokens = reduce_spread_operator(tokens)
+
+    raw_macros = match_macros(tokens)
+
+    raw_imports = match_imports(tokens)
+
+    already_imported += (name,)
+    macros, nested_imports = run_imports(map(lambda s: str(s[1])[1:-1], raw_imports), {}, already_imported)
+    already_imported += nested_imports
+
+    for each in map(prepare_macro, raw_macros):
+        macros[each['name']] = each['overloads']
+
+    return macros, already_imported
 
 
 def parse_elements(tokens):
@@ -959,11 +995,13 @@ if __name__ == '__main__':
         tokens = reduce_spread_operator(tokens)
 
         raw_targets = match_targets(tokens)
-
         raw_variables = match_variables(tokens)
         raw_macros = match_macros(tokens)
+        raw_imports = match_imports(tokens)
 
-        macros = dict({ each['name']: each['overloads'] for each in map(prepare_macro, raw_macros) })
+        macros, _ = run_imports(map(lambda s: str(s[1])[1:-1], raw_imports), {}, ())
+
+        macros.update(dict({ each['name']: each['overloads'] for each in map(prepare_macro, raw_macros) }))
 
         def std_match_regex(s, pat):
             result = [('true' if re.compile(str(pat)).match(str(s)) else 'false')]
