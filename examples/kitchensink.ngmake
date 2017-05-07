@@ -8,22 +8,11 @@ let PHONY = (
     'build/bin/vm/cpu',
 ).
 
-macro echo ( ...all ) ->
-    'echo' ...all
-.
+import 'std::util'.
+import 'std::list'.
 
 macro nope () ->
     'Hello World!'
-.
-
-macro gather ( ...all ) ->
-    all
-.
-
-macro reverse ( only ) ->
-    gather( only )
-; reverse ( first, ...rest ) ->
-    gather( ...reverse( ...rest ), first )
 .
 
 do ('what', ['foo', 'bar', 'bax']) -> (name, deps) ->
@@ -38,8 +27,6 @@ macro compile ( name, ...all ) ->
     cxx ...cxxoptions '-o' name ...all ,
     'touch' name
 .
-
-macro call ( c, ...args ) -> c( ...args ) .
 
 let c = compile .
 
@@ -57,9 +44,9 @@ macro compiled_target (name) ->
     compile(name, ...deps)
 .
 
-macro null ( ...all ) -> .
-
 do ('.PHONY', [ 'build/bin/vm/cpu' ]) -> null .
 
 do ('build/bin/vm/dis', ['src/front/dis.cpp']) -> compiled_target .
 do ('build/bin/vm/dis') -> compiled_target .
+
+/* vim: set ft=javascript: */
