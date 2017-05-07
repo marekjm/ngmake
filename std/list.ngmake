@@ -1,0 +1,15 @@
+/* Gather parameters into a list. */
+macro gather ( ...all ) -> all .
+
+/* Reverse parameters. */
+macro reverse ( only ) ->
+    gather( only )
+; reverse ( first, ...rest ) ->
+    gather( ...reverse( ...rest ), first )
+.
+
+/* Return head or tail of a list. */
+macro head ( first, ...rest ) -> first .
+macro tail ( first, ...rest ) -> rest .
+
+/* vim: set ft=javascript: */

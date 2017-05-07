@@ -269,6 +269,7 @@ SEE ALSO
     make(1)
 """
 
+import os
 import re
 import string
 import sys
@@ -495,9 +496,28 @@ def run_imports(to_import, macros, already_imported):
         already_imported += nested_imports
     return macros, already_imported
 
+def get_candidate_module_locations(name):
+    name = name.replace('::', '/')
+    locations = (
+        os.path.join('.', '{}'),
+        os.path.join('.', '{}.ngmake'),
+        os.path.expanduser(os.path.join('~', '.local', 'lib', 'ngmake', '{}.ngmake')),
+        os.path.join('/', 'usr', 'local', 'lib', 'ngmake', 'std', '{}.ngmake'),
+        os.path.join('/', 'usr', 'lib', 'ngmake', 'std', '{}.ngmake'),
+    )
+    return map(lambda each: each.format(name), locations)
+
 def import_module(name, already_imported = ()):
+    source_file = None
+    for each in get_candidate_module_locations(name):
+        if os.path.isfile(each):
+            source_file = each
+            break
+    else:
+        raise Exception('could not find module', name)
+
     source_text = ''
-    with open(name) as ifstream:
+    with open(source_file) as ifstream:
         source_text = ifstream.read()
 
     raw_tokens = generic_lexer(source_text)

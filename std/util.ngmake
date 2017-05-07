@@ -1,0 +1,7 @@
+macro echo ( ...all ) -> 'echo' ...all .
+
+macro null ( ...all ) -> .
+
+macro call ( c, ...args ) -> c( ...args ) .
+
+/* vim: set ft=javascript: */
